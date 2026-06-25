@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="3M Studio - تطوير روبلوكس احترافي، بوتات ديسكورد مخصصة، إعداد سيرفرات، تصميم مواقع ويب، وتصميم جرافيك لمجتمعات الألعاب. ابنِ مشروع أحلامك اليوم.">
+    <meta name="keywords" content="تطوير روبلوكس, متجر روبلوكس, بوتات ديسكورد, إعداد سيرفر ديسكورد, تصميم مواقع ويب, تصميم جرافيك, وكالة ألعاب">
+    <meta name="author" content="3M Studio">
+    <meta property="og:title" content="3M Studio | تطوير ديسكورد، روبلوكس ومواقع ويب احترافية">
+    <meta property="og:description" content="تطوير روبلوكس احترافي، بوتات ديسكورد، وتصميم مواقع ويب. ابنِ مشروع أحلامك مع 3M Studio.">
+    <meta property="og:type" content="website">
+    <title>3M Studio | ابنِ مشروع أحلامك</title>
+    <!-- Google Fonts: Cairo for Arabic, Outfit & Plus Jakarta Sans for English -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="preloader" class="preloader">
+        <div class="loader-content">
+            <div class="loader-logo">
+                <span class="logo-text">3M <span class="accent-text">STUDIO</span></span>
+            </div>
+            <div class="loader-bar-container">
+                <div id="loader-bar" class="loader-bar"></div>
+            </div>
+            <div class="loader-percentage" id="loader-percentage">0%</div>
+            <div class="loader-status">جاري تهيئة الأنظمة...</div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor sparks container -->
+    <div id="spark-container"></div>
+    <div id="custom-cursor"></div>
+    <div id="custom-cursor-dot"></div>
+
+    <!-- Live Chat Widget -->
+    <div class="chat-widget" id="chat-widget">
+        <button class="chat-trigger" id="chat-trigger" aria-label="افتح الدعم الفني المباشر">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chat-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span class="chat-badge" id="chat-badge">1</span>
+        </button>
+        <div class="chat-window" id="chat-window">
+            <div class="chat-header">
+                <div class="chat-avatar">3M</div>
+                <div class="chat-info">
+                    <h4>بوت الدعم الفني</h4>
+                    <span class="chat-status">متصل حاليًا</span>
+                </div>
+                <button class="chat-close" id="chat-close" aria-label="أغلق المحادثة">&times;</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot">
+                    <div class="message-content">
+                        أهلاً بك! 👋 مرحبًا بك في 3M Studio. كيف يمكننا مساعدتك في بناء مشروع أحلامك اليوم؟
+                    </div>
+                    <div class="message-time">الآن</div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="اكتب رسالة..." autocomplete="off">
+                <button id="chat-send" aria-label="إرسال">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Top -->
+    <button id="back-to-top" class="back-to-top" aria-label="الرجوع للأعلى">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+    </button>
+
+    <!-- Header & Navigation -->
+    <header class="main-header" id="main-header">
+        <div class="header-container">
+            <a href="#" class="logo">
+                <span class="logo-3m" data-edit-id="nav_logo">3M</span>
+                <span class="logo-studio" data-edit-id="nav_logo_sub">STUDIO</span>
+            </a>
+            
+            <nav class="nav-menu" id="nav-menu">
+                <a href="#hero" class="nav-link active">الرئيسية</a>
+                <a href="#services" class="nav-link">الخدمات</a>
+                <a href="#portfolio" class="nav-link">أعمالنا</a>
+                <a href="#why-choose-us" class="nav-link">مميزاتنا</a>
+                <a href="#faq" class="nav-link">الأسئلة الشائعة</a>
+                <a href="#contact" class="nav-link">اتصل بنا</a>
+            </nav>
+
+            <div class="header-actions">
+                <!-- Language Switcher -->
+                <div class="lang-switcher-container">
+                    <button class="lang-toggle-btn" id="lang-toggle-btn">
+                        <span class="flag-icon">🇪🇬</span>
+                        <span class="lang-name">العربية</span>
+                    </button>
+                    <div class="lang-dropdown" id="lang-dropdown">
+                        <button class="lang-option-btn active" data-lang="ar">
+                            <span class="flag-icon">🇪🇬</span> العربية
+                        </button>
+                        <button class="lang-option-btn" data-lang="en">
+                            <span class="flag-icon">🇺🇸</span> English
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Currency Switcher -->
+                <div class="currency-switcher-container">
+                    <button class="currency-toggle-btn" id="currency-toggle-btn">
+                        <span class="currency-name">EGP</span>
+                    </button>
+                    <div class="currency-dropdown" id="currency-dropdown">
+                        <button class="currency-option-btn active" data-currency="EGP">جنيه مصري (EGP)</button>
+                        <button class="currency-option-btn" data-currency="USD">دولار أمريكي (USD)</button>
+                        <button class="currency-option-btn" data-currency="EUR">يورو (EUR)</button>
+                    </div>
+                </div>
+
+                <!-- Discord Login Portal -->
+                <div class="discord-auth-area" id="discord-auth-area">
+                    <button class="btn btn-secondary btn-sm discord-login-btn" id="discord-login-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36" fill="currentColor" class="discord-btn-icon"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,52.88,6.83,77.19,77.19,0,0,0,49.58,0,105.15,105.15,0,0,0,19.14,8.07C-3,41.25-1,73.65,12.39,93.6a105.59,105.59,0,0,0,32.44,16.48,81.16,81.16,0,0,0,6.83-11.12,68.36,68.36,0,0,1-10.75-5.13c1-.7,1.93-1.44,2.83-2.2a74.22,74.22,0,0,0,81.82,0c.9.76,1.88,1.5,2.83,2.2a67.88,67.88,0,0,1-10.75,5.13,85.25,85.25,0,0,0,6.83,11.12,105.21,105.21,0,0,0,32.44-16.48C128.53,73.65,130.68,41.25,107.7,8.07ZM42.45,75.3C35,75.3,28.8,68.45,28.8,60.11s6-65.19,13.65-60.11c7.66,0,13.8,6.88,13.65,15.19S50.11,75.3,42.45,75.3Zm42.24,0c-7.41,0-13.65-6.85-13.65-60.11s6-65.19,13.65-60.11c7.66,0,13.8,6.88,13.65,15.19S92.35,75.3,84.69,75.3Z"/></svg>
+                        <span class="login-lbl">تسجيل الدخول</span>
+                    </button>
+                    <!-- Logged in state dropdown element wrapper -->
+                    <div class="logged-user-profile" id="logged-user-profile">
+                        <div class="user-avatar" id="user-avatar-initial">G</div>
+                        <div class="user-menu-dropdown" id="user-menu-dropdown">
+                            <h5 id="user-display-name">GamerPro#1337</h5>
+                            <button class="user-dropdown-btn" id="btn-show-orders-history">طلباتي السابقة</button>
+                            <button class="user-dropdown-btn logout-btn" id="btn-discord-logout">تسجيل الخروج</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="search-container">
+                    <input type="text" id="search-bar" placeholder="بحث عن خدمة..." autocomplete="off">
+                    <button class="search-btn" id="search-btn" aria-label="ابحث">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </button>
+                    <!-- Search Results Dropdown -->
+                    <div class="search-results-dropdown" id="search-results-dropdown"></div>
+                </div>
+                <button class="hamburger" id="hamburger" aria-label="تبديل القائمة">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container for sections reordering -->
+    <main id="sections-container">
+        
+        <!-- HERO SECTION -->
+        <section id="hero" class="homepage-section hero-section">
+            <div class="hero-bg-animations">
+                <div class="grid-overlay"></div>
+                <div class="glow-orb orb-1"></div>
+                <div class="glow-orb orb-2"></div>
+                <div class="animated-lines"></div>
+            </div>
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="badge" data-edit-id="hero_badge">وكالة ألعاب احترافية</span>
+                    <h1 class="hero-title">
+                        <span data-edit-id="hero_title_p1">ابنِ مشروع</span> 
+                        <span class="gradient-text" data-edit-id="hero_title_p2">أحلامك مع 3M Studio</span>
+                    </h1>
+                    <p class="hero-subtitle" data-edit-id="hero_subtitle">
+                        تطوير روبلوكس احترافي، إعداد سيرفرات ديسكورد وإنشاء مواقع ويب. حوّل أفكارك إلى واقع رقمي.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#contact" class="btn btn-primary btn-glow" data-edit-id="hero_btn_1">ابدأ الآن</a>
+                        <a href="#services" class="btn btn-secondary" data-edit-id="hero_btn_2">عرض الخدمات</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SERVICES SECTION -->
+        <section id="services" class="homepage-section services-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">خبراتنا</span>
+                    <h2 class="section-title" data-edit-id="services_section_title">ما نتخصص فيه</h2>
+                    <p class="section-subtitle" data-edit-id="services_section_subtitle">نقدم إعدادات مجتمعات ألعاب احترافية، سكربتات مخصصة، منتجات متاجر وحلول ويب متكاملة.</p>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="tabs-nav">
+                    <button class="tab-btn active" data-tab="roblox-dev">تطوير روبلوكس</button>
+                    <button class="tab-btn" data-tab="roblox-store">متجر روبلوكس</button>
+                    <button class="tab-btn" data-tab="discord-services">إعداد ديسكورد</button>
+                    <button class="tab-btn" data-tab="website-dev">تطوير الويب</button>
+                </div>
+
+                <!-- Tabs Content -->
+                <div class="tabs-content">
+                    <!-- Roblox Dev Tab -->
+                    <div class="tab-pane active" id="roblox-dev">
+                        <div class="services-grid" id="roblox-dev-grid">
+                            <!-- Dynamic Cards Loaded from State -->
+                        </div>
+                    </div>
+
+                    <!-- Roblox Store Tab -->
+                    <div class="tab-pane" id="roblox-store">
+                        <div class="services-grid" id="roblox-store-grid">
+                            <!-- Dynamic Cards Loaded from State -->
+                        </div>
+                    </div>
+
+                    <!-- Discord Services Tab -->
+                    <div class="tab-pane" id="discord-services">
+                        <div class="services-grid" id="discord-services-grid">
+                            <!-- Dynamic Cards Loaded from State -->
+                        </div>
+                    </div>
+
+                    <!-- Website Dev Tab -->
+                    <div class="tab-pane" id="website-dev">
+                        <div class="services-grid" id="website-dev-grid">
+                            <!-- Dynamic Cards Loaded from State -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PORTFOLIO SECTION -->
+        <section id="portfolio" class="homepage-section portfolio-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">أعمالنا</span>
+                    <h2 class="section-title" data-edit-id="portfolio_section_title">معرض أعمالنا الأخيرة</h2>
+                    <p class="section-subtitle" data-edit-id="portfolio_section_subtitle">استكشف بعضًا من أحدث خرائط روبلوكس، أنظمة السكربتات، مجتمعات ديسكورد، وتصميمات المواقع.</p>
+                </div>
+
+                <div class="portfolio-filters">
+                    <button class="filter-btn active" data-filter="all">جميع المشاريع</button>
+                    <button class="filter-btn" data-filter="roblox">روبلوكس</button>
+                    <button class="filter-btn" data-filter="discord">ديسكورد</button>
+                    <button class="filter-btn" data-filter="web">مواقع ويب</button>
+                </div>
+
+                <div class="portfolio-grid" id="portfolio-grid">
+                    <!-- Dynamic Portfolio Items Loaded from State -->
+                </div>
+            </div>
+        </section>
+
+        <!-- WHY CHOOSE US SECTION -->
+        <section id="why-choose-us" class="homepage-section why-us-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">لماذا تختارنا</span>
+                    <h2 class="section-title" data-edit-id="why_section_title">لماذا تختار وكالتنا؟</h2>
+                    <p class="section-subtitle" data-edit-id="why_section_subtitle">نجمع بين ثقافة الألعاب والخبرة التقنية العالية لتقديم حلول لا مثيل لها.</p>
+                </div>
+
+                <div class="why-us-grid" id="why-us-grid">
+                    <!-- Dynamic Cards Loaded from State -->
+                </div>
+            </div>
+        </section>
+
+        <!-- STATISTICS SECTION -->
+        <section id="statistics" class="homepage-section stats-section">
+            <div class="stats-bg-animations">
+                <div class="glow-orb stats-orb"></div>
+            </div>
+            <div class="container">
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Dynamic Stats Items Loaded from State -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TESTIMONIALS SECTION -->
+        <section id="testimonials" class="homepage-section testimonials-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">التقييمات</span>
+                    <h2 class="section-title" data-edit-id="testimonials_section_title">ماذا يقول عملائنا</h2>
+                    <p class="section-subtitle" data-edit-id="testimonials_section_subtitle">اقرأ تقييمات موثقة من أصحاب السيرفرات، ومطوري الألعاب، ومدراء المجتمعات الذين يثقون بنا.</p>
+                </div>
+
+                <div class="testimonials-slider-container">
+                    <div class="testimonials-grid" id="testimonials-grid">
+                        <!-- Dynamic Testimonials Loaded from State -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ SECTION -->
+        <section id="faq" class="homepage-section faq-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">الأسئلة الشائعة</span>
+                    <h2 class="section-title" data-edit-id="faq_section_title">الأسئلة الأكثر شيوعًا</h2>
+                    <p class="section-subtitle" data-edit-id="faq_section_subtitle">لديك أسئلة؟ لدينا إجابات. اعثر على إجابات سريعة حول الطلبات، البوتات، مواعيد التسليم والمزيد.</p>
+                </div>
+
+                <div class="faq-accordion" id="faq-accordion">
+                    <!-- Dynamic FAQ Items Loaded from State -->
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="homepage-section contact-section">
+            <div class="container">
+                <div class="contact-grid">
+                    <!-- Left: Agency Details -->
+                    <div class="contact-info-panel">
+                        <span class="badge">تواصل معنا</span>
+                        <h2 class="section-title text-left" data-edit-id="contact_section_title">ابدأ رحلة مشروعك</h2>
+                        <p class="contact-description" data-edit-id="contact_section_subtitle">
+                            هل أنت مستعد لنقل لعبتك أو سيرفرك للمستوى التالي؟ املأ النموذج، وسيتواصل معك فريقنا في أقل من 24 ساعة.
+                        </p>
+                        
+                        <div class="contact-details">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                </div>
+                                <div class="info-text">
+                                    <span>البريد الإلكتروني المباشر</span>
+                                    <strong data-edit-id="contact_email">contact@3mstudio.gg</strong>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                </div>
+                                <div class="info-text">
+                                    <span>سيرفر ديسكورد</span>
+                                    <strong data-edit-id="contact_discord">discord.gg/3mstudio</strong>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                </div>
+                                <div class="info-text">
+                                    <span>ساعات العمل</span>
+                                    <strong data-edit-id="contact_hours">دعم متواصل 24/7</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="social-links-container">
+                            <h4 data-edit-id="contact_socials_title">تابع مجتمعنا</h4>
+                            <div class="social-links">
+                                <a href="#" aria-label="Discord" class="social-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36" fill="currentColor" class="svg-discord"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,52.88,6.83,77.19,77.19,0,0,0,49.58,0,105.15,105.15,0,0,0,19.14,8.07C-3,41.25-1,73.65,12.39,93.6a105.59,105.59,0,0,0,32.44,16.48,81.16,81.16,0,0,0,6.83-11.12,68.36,68.36,0,0,1-10.75-5.13c1-.7,1.93-1.44,2.83-2.2a74.22,74.22,0,0,0,81.82,0c.9.76,1.88,1.5,2.83,2.2a67.88,67.88,0,0,1-10.75,5.13,85.25,85.25,0,0,0,6.83,11.12,105.21,105.21,0,0,0,32.44-16.48C128.53,73.65,130.68,41.25,107.7,8.07ZM42.45,75.3C35,75.3,28.8,68.45,28.8,60.11s6-65.19,13.65-60.11c7.66,0,13.8,6.88,13.65,15.19S50.11,75.3,42.45,75.3Zm42.24,0c-7.41,0-13.65-6.85-13.65-60.11s6-65.19,13.65-60.11c7.66,0,13.8,6.88,13.65,15.19S92.35,75.3,84.69,75.3Z"/></svg>
+                                </a>
+                                <a href="#" aria-label="Twitter" class="social-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
+                                </a>
+                                <a href="#" aria-label="YouTube" class="social-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.37z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>
+                                </a>
+                                <a href="#" aria-label="Github" class="social-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Form -->
+                    <div class="contact-form-panel">
+                        <form id="contact-form" class="gaming-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="form-name">الاسم</label>
+                                    <input type="text" id="form-name" placeholder="جون دو" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-email">البريد الإلكتروني</label>
+                                    <input type="email" id="form-email" placeholder="john@example.com" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="form-discord">اسم مستخدم ديسكورد (Discord)</label>
+                                <input type="text" id="form-discord" placeholder="username#0000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="form-service">الخدمة المطلوبة</label>
+                                <div class="select-wrapper">
+                                    <select id="form-service" required>
+                                        <option value="" disabled selected>اختر الخدمة</option>
+                                        <option value="تطوير ألعاب روبلوكس">تطوير ألعاب روبلوكس</option>
+                                        <option value="شراء منتج متجر">شراء منتج من المتجر</option>
+                                        <option value="إعداد سيرفر ديسكورد">إعداد سيرفر ديسكورد</option>
+                                        <option value="برمجة بوت ديسكورد مخصص">برمجة بوت ديسكورد مخصص</option>
+                                        <option value="تطوير موقع ويب">تطوير موقع ويب</option>
+                                        <option value="تصاميم جرافيك مجتمعات">تصاميم جرافيك للمجتمعات</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="form-message">تفاصيل الرسالة</label>
+                                <textarea id="form-message" rows="5" placeholder="أخبرنا بتفاصيل مشروعك، الميزانية، وموعد التسليم المطلوب..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block btn-glow">إرسال الطلب</button>
+                        </form>
+                        <div class="form-success-msg" id="form-success-msg">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="success-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <h3>تم إرسال الرسالة بنجاح!</h3>
+                            <p>شكرًا لتواصلك مع 3M Studio. تم تسجيل طلبك الفني، وتم إرسال نسخة تأكيد لبريدك الإلكتروني.</p>
+                            <button class="btn btn-secondary btn-sm" id="form-reset-btn">إرسال رسالة أخرى</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="main-footer">
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <span class="logo-3m" data-edit-id="footer_logo">3M</span>
+                    <span class="logo-studio" data-edit-id="footer_logo_sub">STUDIO</span>
+                </a>
+                <p class="brand-pitch" data-edit-id="footer_pitch">تطوير روبلوكس احترافي، إعدادات ديسكورد، ومواقع ويب مخصصة لمجتمعات الألعاب.</p>
+            </div>
+            
+            <div class="footer-links-grid">
+                <div class="links-column">
+                    <h5 data-edit-id="footer_col_1_title">روابط سريعة</h5>
+                    <nav>
+                        <a href="#hero">الرئيسية</a>
+                        <a href="#services">الخدمات</a>
+                        <a href="#portfolio">أعمالنا</a>
+                        <a href="#why-choose-us">مميزاتنا</a>
+                        <a href="#faq">الأسئلة الشائعة</a>
+                    </nav>
+                </div>
+                <div class="links-column">
+                    <h5 data-edit-id="footer_col_2_title">خدماتنا</h5>
+                    <nav>
+                        <a href="#services">ألعاب روبلوكس</a>
+                        <a href="#services">متاجر داخل اللعبة</a>
+                        <a href="#services">إعداد ديسكورد</a>
+                        <a href="#services">بوتات مخصصة</a>
+                        <a href="#services">تطوير الويب</a>
+                    </nav>
+                </div>
+                <div class="links-column">
+                    <h5 data-edit-id="footer_col_3_title">قانوني</h5>
+                    <nav>
+                        <a href="#">شروط الخدمة</a>
+                        <a href="#">سياسة الخصوصية</a>
+                        <a href="#">سياسة الاسترجاع</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container footer-bottom-container">
+                <p class="copyright">&copy; 2026 <span data-edit-id="footer_copy">3M Studio</span>. جميع الحقوق محفوظة.</p>
+                <div class="footer-socials">
+                    <a href="#" aria-label="Discord">Discord</a>
+                    <a href="#" aria-label="Twitter">Twitter</a>
+                    <a href="#" aria-label="YouTube">YouTube</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- STORE PURCHASE REQUEST MODAL -->
+    <div class="modal-overlay" id="purchase-modal">
+        <div class="modal-card purchase-card">
+            <div class="modal-header">
+                <h3 id="purchase-modal-title-text">تقديم طلب شراء</h3>
+                <button class="modal-close" id="purchase-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="purchase-product-summary">
+                    <span class="summary-lbl" id="purchase-lbl-product">الخدمة / المنتج المختار:</span>
+                    <h4 id="purchase-product-name">جاري التحميل...</h4>
+                    <div class="purchase-price-tag" id="purchase-product-price">المبلغ: --</div>
+                </div>
+                <form id="purchase-request-form" class="gaming-form">
+                    <div class="form-group">
+                        <label for="purchase-name" id="purchase-lbl-name">الاسم الكامل</label>
+                        <input type="text" id="purchase-name" placeholder="جون دو" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="purchase-email" id="purchase-lbl-email">البريد الإلكتروني</label>
+                        <input type="email" id="purchase-email" placeholder="john@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="purchase-discord" id="purchase-lbl-discord">اسم مستخدم ديسكورد (Discord)</label>
+                        <input type="text" id="purchase-discord" placeholder="username#0000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="purchase-details" id="purchase-lbl-details">تفاصيل إضافية / متطلبات خاصة</label>
+                        <textarea id="purchase-details" rows="4" placeholder="اكتب هنا أي تفاصيل أو متطلبات خاصة ترغب بضمها..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-glow" id="purchase-btn-submit">إرسال طلب الشراء</button>
+                </form>
+                
+                <div class="form-success-msg" id="purchase-success-msg">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="success-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <h3 id="purchase-success-title">تم إرسال طلب الشراء بنجاح!</h3>
+                    <p id="purchase-success-desc">شكرًا لتعاملك مع 3M Studio. تم تسجيل طلبك بنجاح بالرقم التعريفي الموضح أدناه. لقد أرسلنا رسالة تأكيد لبريدك الإلكتروني، وسيتواصل معك أحد ممثلينا عبر ديسكورد أو البريد خلال 24 ساعة.</p>
+                    <div class="order-id-badge">رقم الطلب: <span id="purchase-order-id">#3M-12345</span></div>
+                    <button class="btn btn-secondary btn-sm" id="purchase-success-close">إغلاق النافذة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOCK DISCORD OAUTH LOGIN MODAL -->
+    <div class="modal-overlay" id="discord-auth-modal">
+        <div class="discord-oauth-card">
+            <div class="discord-oauth-header">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36" fill="currentColor" class="discord-oauth-logo"><path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,52.88,6.83,77.19,77.19,0,0,0,49.58,0,105.15,105.15,0,0,0,19.14,8.07C-3,41.25-1,73.65,12.39,93.6a105.59,105.59,0,0,0,32.44,16.48,81.16,81.16,0,0,0,6.83-11.12,68.36,68.36,0,0,1-10.75-5.13c1-.7,1.93-1.44,2.83-2.2a74.22,74.22,0,0,0,81.82,0c.9.76,1.88,1.5,2.83,2.2a67.88,67.88,0,0,1-10.75,5.13,85.25,85.25,0,0,0,6.83,11.12,105.21,105.21,0,0,0,32.44-16.48C128.53,73.65,130.68,41.25,107.7,8.07ZM42.45,75.3C35,75.3,28.8,68.45,28.8,60.11s6-65.19,13.65-60.11c7.66,0,13.8,6.88,13.65,15.19S50.11,75.3,42.45,75.3Zm42.24,0c-7.41,0-13.65-6.85-13.65-60.11s6-65.19,13.65-60.11c7.66,0,13.8,6.88,13.65,15.19S92.35,75.3,84.69,75.3Z"/></svg>
+                <span>تفويض ديسكورد / Discord OAuth</span>
+            </div>
+            <div class="discord-oauth-body">
+                <div class="oauth-app-profile">
+                    <div class="app-avatar">3M</div>
+                    <div class="app-meta">
+                        <h4>3M Studio Portal</h4>
+                        <span>3mstudio.gg</span>
+                    </div>
+                </div>
+                <p class="oauth-desc" id="discord-oauth-desc-text">يرغب التطبيق <strong>3M Studio Portal</strong> بالوصول إلى حسابك في ديسكورد:</p>
+                <ul class="oauth-scopes">
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span id="discord-scope-1">معرفة اسم المستخدم الخاص بك والهاشتاج (Tag)</span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span id="discord-scope-2">الوصول إلى صورتك الرمزية وعنوان المعرف</span>
+                    </li>
+                </ul>
+                
+                <div class="oauth-user-input">
+                    <label for="discord-input-username" id="discord-lbl-username-input">اسم مستخدم ديسكورد</label>
+                    <input type="text" id="discord-input-username" value="GamerPro#1337">
+                </div>
+
+                <div class="oauth-buttons">
+                    <button class="btn oauth-btn-cancel" id="discord-oauth-cancel">إلغاء</button>
+                    <button class="btn oauth-btn-authorize" id="discord-oauth-auth">تفويض / Authorize</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLIENT ORDER HISTORY MODAL -->
+    <div class="modal-overlay" id="user-orders-modal">
+        <div class="modal-card user-orders-card">
+            <div class="modal-header">
+                <h3 id="user-orders-modal-title">سجل المشتريات والطلبات</h3>
+                <button class="modal-close" id="user-orders-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="user-profile-meta-box">
+                    <div class="user-avatar-large" id="user-orders-avatar">G</div>
+                    <div class="user-meta-details">
+                        <h4 id="user-orders-username">GamerPro#1337</h4>
+                        <span id="user-orders-subtitle-status">مستخدم ديسكورد موثق</span>
+                    </div>
+                </div>
+                <div class="orders-history-list" id="user-orders-list">
+                    <!-- User specific orders here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div class="modal-overlay" id="admin-login-modal">
+        <div class="modal-card admin-login-card">
+            <div class="modal-header">
+                <h3>دخول لوحة التحكم</h3>
+                <button class="modal-close" id="admin-login-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="admin-icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="admin-lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+                <p class="modal-desc">أدخل كلمة المرور الأمنية لتفعيل لوحة التحكم Visual Editor.</p>
+                <div class="form-group">
+                    <label for="admin-password">كلمة المرور</label>
+                    <input type="password" id="admin-password" placeholder="••••••••" required>
+                    <span class="error-text" id="admin-error-text">رمز المرور غير صحيح. يرجى المحاولة ثانية.</span>
+                </div>
+                <button class="btn btn-primary btn-block btn-glow" id="admin-login-submit">تسجيل الدخول</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN FLOATING TOOLBAR -->
+    <div id="admin-toolbar" class="admin-toolbar">
+        <div class="toolbar-brand">
+            <span class="logo-3m">3M</span> <span class="badge badge-admin">EDITOR</span>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-actions">
+            <!-- Undo/Redo -->
+            <button class="toolbar-btn" id="tb-undo" title="تراجع" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+            </button>
+            <button class="toolbar-btn" id="tb-redo" title="إعادة" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+            </button>
+            
+            <div class="toolbar-divider"></div>
+
+            <!-- Editor Toggles -->
+            <button class="toolbar-btn active-mode" id="tb-toggle-text" title="تعديل النصوص المباشر">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                <span>تعديل النصوص</span>
+            </button>
+            <button class="toolbar-btn" id="tb-toggle-layout" title="إعادة ترتيب الأقسام والمظهر">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="10" y2="21"></line></svg>
+                <span>المظهر والأقسام</span>
+            </button>
+            <button class="toolbar-btn" id="tb-toggle-products" title="إدارة المنتجات والأعمال والأسئلة">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                <span>كتالوج المنتجات</span>
+            </button>
+            <button class="toolbar-btn" id="tb-toggle-leads" title="طلبات الشراء والرسائل المستلمة">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span>المبيعات والرسائل <span class="badge-count" id="tb-msg-count">0</span></span>
+            </button>
+            <button class="toolbar-btn" id="tb-toggle-logs" title="سجل تعديلات النظام الحالية">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>السجلات</span>
+            </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-status">
+            <span class="status-orb blinking" id="tb-save-status-orb"></span>
+            <span id="tb-save-status-text">Draft Synced</span>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-publish">
+            <button class="btn btn-secondary btn-sm" id="tb-discard" title="تجاهل المسودات الحالية">تجاهل</button>
+            <button class="btn btn-primary btn-sm btn-glow" id="tb-publish" title="نشر التعديلات فورًا للزوار">نشر التعديلات</button>
+            <button class="btn btn-danger btn-sm" id="tb-exit" title="خروج من لوحة التحكم">خروج</button>
+        </div>
+    </div>
+
+    <!-- ADMIN SIDE PANEL (THEME & SECTION MANAGEMENT) -->
+    <div id="admin-side-panel" class="admin-side-panel">
+        <div class="side-panel-header">
+            <h3>ترتيب الصفحات ومظهر الألوان</h3>
+            <button class="panel-close" id="side-panel-close">&times;</button>
+        </div>
+        <div class="side-panel-body">
+            
+            <!-- Section 1: Color Customizer -->
+            <div class="panel-section">
+                <h4>مظهر الألوان المخصصة</h4>
+                <div class="theme-inputs">
+                    <div class="theme-color-row">
+                        <label for="color-primary">اللون الأساسي (Primary)</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="color-primary" value="#00f2fe">
+                            <input type="text" id="color-primary-text" value="#00f2fe">
+                        </div>
+                    </div>
+                    <div class="theme-color-row">
+                        <label for="color-secondary">اللون الثانوي (Secondary)</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="color-secondary" value="#7f00ff">
+                            <input type="text" id="color-secondary-text" value="#7f00ff">
+                        </div>
+                    </div>
+                    <div class="theme-color-row">
+                        <label for="color-bg">الخلفية الداكنة للويب</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="color-bg" value="#050508">
+                            <input type="text" id="color-bg-text" value="#050508">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Layout Reordering -->
+            <div class="panel-section">
+                <h4>ترتيب أقسام الصفحة الرئيسية</h4>
+                <p class="panel-sub">رتب أقسام الويب كما ترغب. التغيير يظهر فورًا في الصفحة.</p>
+                <div class="sections-list" id="admin-sections-list">
+                    <!-- Dynamic draggable section items will load here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PRODUCTS & PORTFOLIO MODAL -->
+    <div class="modal-overlay" id="admin-products-modal">
+        <div class="modal-card products-manager-card">
+            <div class="modal-header">
+                <h3>إدارة الخدمات والمعارض والأسئلة الشائعة</h3>
+                <button class="modal-close" id="admin-products-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="manager-tabs">
+                    <button class="m-tab-btn active" data-mtab="m-services">الخدمات والعناصر</button>
+                    <button class="m-tab-btn" data-mtab="m-portfolio">أعمال المعرض</button>
+                    <button class="m-tab-btn" data-mtab="m-faqs">الأسئلة والأجوبة</button>
+                </div>
+                <div class="manager-tab-content">
+                    
+                    <!-- Services Manager -->
+                    <div class="m-tab-pane active" id="m-services">
+                        <div class="manager-action-bar">
+                            <h4>قائمة العروض والمنتجات الحالية</h4>
+                            <button class="btn btn-primary btn-sm btn-glow" id="btn-add-service">+ إضافة خدمة جديدة</button>
+                        </div>
+                        <div class="manager-table-wrapper">
+                            <table class="manager-table">
+                                <thead>
+                                    <tr>
+                                        <th>الاسم</th>
+                                        <th>القسم</th>
+                                        <th>السعر المرجعي (USD)</th>
+                                        <th>الوصف</th>
+                                        <th>خيارات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-manager-list">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Manager -->
+                    <div class="m-tab-pane" id="m-portfolio">
+                        <div class="manager-action-bar">
+                            <h4>أعمال المعرض والواجهات</h4>
+                            <button class="btn btn-primary btn-sm btn-glow" id="btn-add-portfolio">+ إضافة عمل جديد</button>
+                        </div>
+                        <div class="manager-table-wrapper">
+                            <table class="manager-table">
+                                <thead>
+                                    <tr>
+                                        <th>عنوان المشروع</th>
+                                        <th>القسم</th>
+                                        <th>مسار الصورة</th>
+                                        <th>خيارات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="portfolio-manager-list">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Manager -->
+                    <div class="m-tab-pane" id="m-faqs">
+                        <div class="manager-action-bar">
+                            <h4>قائمة الأسئلة الشائعة</h4>
+                            <button class="btn btn-primary btn-sm btn-glow" id="btn-add-faq">+ إضافة سؤال جديد</button>
+                        </div>
+                        <div class="manager-table-wrapper">
+                            <table class="manager-table">
+                                <thead>
+                                    <tr>
+                                        <th>السؤال</th>
+                                        <th>معاينة الإجابة</th>
+                                        <th>خيارات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="faqs-manager-list">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN CUSTOMER INQUIRIES MODAL -->
+    <div class="modal-overlay" id="admin-leads-modal">
+        <div class="modal-card leads-manager-card">
+            <div class="modal-header">
+                <h3>إدارة الرسائل وطلبات المبيعات الفورية</h3>
+                <button class="modal-close" id="admin-leads-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                
+                <div class="leads-stats">
+                    <div class="lead-stat-box">
+                        <span class="stat-num" id="lead-stat-count">0</span>
+                        <span class="stat-lbl">الرسائل الواردة</span>
+                    </div>
+                    <div class="lead-stat-box">
+                        <span class="stat-num" id="lead-stat-orders">0</span>
+                        <span class="stat-lbl">طلبات المشتريات</span>
+                    </div>
+                </div>
+
+                <div class="manager-tabs">
+                    <button class="m-tab-btn active" data-mtab="m-leads-inbound">الرسائل المستلمة</button>
+                    <button class="m-tab-btn" data-mtab="m-orders-inbound">طلبات الشراء</button>
+                    <button class="m-tab-btn" data-mtab="m-smtp-logs">صندوق SMTP البريدي</button>
+                </div>
+
+                <div class="manager-tab-content">
+                    <!-- Contact Form Inbounds -->
+                    <div class="m-tab-pane active" id="m-leads-inbound">
+                        <div class="manager-action-bar">
+                            <h4>رسائل تواصل معنا الواردة</h4>
+                            <button class="btn btn-danger btn-sm" id="btn-clear-leads">حذف جميع الرسائل</button>
+                        </div>
+                        <div class="leads-list-wrapper">
+                            <div class="leads-list" id="leads-list-container">
+                                <!-- Dynamic contacts logs -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Requests Inbounds -->
+                    <div class="m-tab-pane" id="m-orders-inbound">
+                        <div class="manager-action-bar">
+                            <h4>طلبات الشراء الواردة من المتجر</h4>
+                            <div class="orders-action-group">
+                                <input type="text" id="order-search-input" placeholder="بحث باسم المشتري أو رقم الطلب..." class="admin-table-search">
+                                <button class="btn btn-secondary btn-sm" id="btn-export-orders-csv">تصدير CSV</button>
+                                <button class="btn btn-danger btn-sm" id="btn-clear-orders">حذف جميع الطلبات</button>
+                            </div>
+                        </div>
+                        <div class="leads-list-wrapper">
+                            <div class="leads-list" id="orders-list-container">
+                                <!-- Dynamic orders logs -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SMTP Logs Outbox Simulator -->
+                    <div class="m-tab-pane" id="m-smtp-logs">
+                        <div class="manager-action-bar">
+                            <h4>صندوق SMTP البريدي ومحاكاة الإرسال</h4>
+                            <span class="table-badge">صادر / Outbox</span>
+                        </div>
+                        <p class="panel-sub" style="margin-bottom:12px;">سجل رسائل تأكيد البريد التي تم إرسالها تلقائيًا للعميل والإدارة (omarsaber6545@gmail.com) عند إرسال النماذج.</p>
+                        <div class="logs-console-wrapper">
+                            <div class="logs-console" id="smtp-logs-container" style="height:250px;">
+                                <!-- SMTP records populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN AUDIT LOGS MODAL -->
+    <div class="modal-overlay" id="admin-logs-modal">
+        <div class="modal-card logs-manager-card">
+            <div class="modal-header">
+                <h3>سجل تعديلات الأنظمة والعمليات الحالية</h3>
+                <button class="modal-close" id="admin-logs-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">تتبع العمليات التي قمت بها ومزامنة البيانات وتعديل كتالوجات المبيعات خلال الجلسة الحالية.</p>
+                <div class="logs-console-wrapper">
+                    <div class="logs-console" id="logs-console-container">
+                        <!-- Dynamic logs console lines loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGE UPLOADER MODAL (FOR LIVE IMAGE REPLACEMENT) -->
+    <div class="modal-overlay" id="admin-image-modal">
+        <div class="modal-card image-uploader-card">
+            <div class="modal-header">
+                <h3>تحديث صورة العنصر</h3>
+                <button class="modal-close" id="admin-image-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="img-source-url">رابط الصورة (URL)</label>
+                    <input type="text" id="img-source-url" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="img-divider"><span>أو</span></div>
+                <div class="form-group">
+                    <label for="img-file-upload" class="file-upload-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span>اختر ملف صورة محلي من جهازك</span>
+                    </label>
+                    <input type="file" id="img-file-upload" accept="image/*" style="display:none;">
+                    <div id="img-upload-preview-container" class="img-preview-container">
+                        <img id="img-upload-preview" src="" alt="المعاينة">
+                        <span id="img-upload-name">لم يتم اختيار ملف</span>
+                    </div>
+                </div>
+                <input type="hidden" id="img-target-id">
+                <button class="btn btn-primary btn-block btn-glow" id="admin-image-submit">تحديث الصورة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DYNAMIC SERVICES ADD/EDIT MODAL -->
+    <div class="modal-overlay" id="admin-service-edit-modal">
+        <div class="modal-card service-form-card">
+            <div class="modal-header">
+                <h3 id="service-modal-title">إضافة/تعديل الخدمة</h3>
+                <button class="modal-close" id="admin-service-form-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="service-item-form">
+                    <input type="hidden" id="service-form-id">
+                    <div class="form-group">
+                        <label for="service-form-name">اسم الخدمة</label>
+                        <input type="text" id="service-form-name" placeholder="برمجة سكربت مخصص" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="service-form-category">قسم التبويب</label>
+                        <select id="service-form-category" required>
+                            <option value="roblox-dev">تطوير روبلوكس</option>
+                            <option value="roblox-store">متجر روبلوكس</option>
+                            <option value="discord-services">إعداد ديسكورد</option>
+                            <option value="website-dev">تطوير الويب</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="service-form-price">السعر بالدولار (USD Base)</label>
+                        <input type="number" id="service-form-price" placeholder="49" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="service-form-desc">الوصف القصير للخدمة</label>
+                        <textarea id="service-form-desc" rows="3" placeholder="وصف الخدمة التي تقدمها بالتفصيل..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="service-form-features">مزايا الخدمة (واحدة لكل سطر)</label>
+                        <textarea id="service-form-features" rows="4" placeholder="ميزة 1&#10;ميزة 2&#10;ميزة 3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-glow">حفظ التغييرات</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DYNAMIC PORTFOLIO ADD/EDIT MODAL -->
+    <div class="modal-overlay" id="admin-portfolio-edit-modal">
+        <div class="modal-card portfolio-form-card">
+            <div class="modal-header">
+                <h3 id="portfolio-modal-title">إضافة/تعديل عمل بالمعرض</h3>
+                <button class="modal-close" id="admin-portfolio-form-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="portfolio-item-form">
+                    <input type="hidden" id="portfolio-form-id">
+                    <div class="form-group">
+                        <label for="portfolio-form-title">عنوان المشروع</label>
+                        <input type="text" id="portfolio-form-title" placeholder="خريطة سيمولاتور الفضاء" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="portfolio-form-category">قسم الفلتر</label>
+                        <select id="portfolio-form-category" required>
+                            <option value="roblox">روبلوكس</option>
+                            <option value="discord">ديسكورد</option>
+                            <option value="web">مواقع الويب</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="portfolio-form-desc">وصف العمل بالتفصيل</label>
+                        <input type="text" id="portfolio-form-desc" placeholder="بناء خريطة سيمولاتور فضاء متكاملة مع تصميم سكربتات ونظام طاقة..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="portfolio-form-image">مسار الصورة / الرابط</label>
+                        <input type="text" id="portfolio-form-image" placeholder="assets/images/roblox_dev.png" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="portfolio-form-tag">بطاقة التصنيف</label>
+                        <input type="text" id="portfolio-form-tag" placeholder="بناء وتصميم روبلوكس" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-glow">حفظ العمل</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DYNAMIC FAQ ADD/EDIT MODAL -->
+    <div class="modal-overlay" id="admin-faq-edit-modal">
+        <div class="modal-card faq-form-card">
+            <div class="modal-header">
+                <h3 id="faq-modal-title">إضافة/تعديل سؤال وجواب</h3>
+                <button class="modal-close" id="admin-faq-form-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="faq-item-form">
+                    <input type="hidden" id="faq-form-id">
+                    <div class="form-group">
+                        <label for="faq-form-question">السؤال</label>
+                        <input type="text" id="faq-form-question" placeholder="كم من الوقت يستغرق إعداد سيرفر ديسكورد؟" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="faq-form-answer">الإجابة التفصيلية</label>
+                        <textarea id="faq-form-answer" rows="4" placeholder="يستغرق إعداد السيرفرات العادية من 24 إلى 48 ساعة كحد أقصى..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-glow">حفظ السؤال</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript File -->
+    <script src="app.js"></script>
+</body>
+</html>
