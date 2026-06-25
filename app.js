@@ -1222,6 +1222,8 @@ function applyDiscordLoginState(user) {
     const authArea = document.getElementById("discord-auth-area");
     const nameLabel = document.getElementById("user-display-name");
     const initialLabel = document.getElementById("user-avatar-initial");
+    const profileWrapper = document.getElementById("logged-user-profile");
+    const loginBtn = document.getElementById("discord-login-btn");
 
     if (authArea && nameLabel && initialLabel) {
         nameLabel.innerText = user.username;
@@ -1239,6 +1241,8 @@ function applyDiscordLoginState(user) {
         }
         
         authArea.classList.add("logged-in");
+        if (profileWrapper) profileWrapper.classList.add("active");
+        if (loginBtn) loginBtn.style.display = "none";
         
         const purchaseDiscord = document.getElementById("purchase-discord");
         if (purchaseDiscord) purchaseDiscord.value = user.username;
@@ -1248,8 +1252,17 @@ function applyDiscordLoginState(user) {
 function handleDiscordLogout() {
     localStorage.removeItem("discord_user");
     const authArea = document.getElementById("discord-auth-area");
+    const profileWrapper = document.getElementById("logged-user-profile");
+    const loginBtn = document.getElementById("discord-login-btn");
+
     if (authArea) {
         authArea.classList.remove("logged-in");
+    }
+    if (profileWrapper) {
+        profileWrapper.classList.remove("active");
+    }
+    if (loginBtn) {
+        loginBtn.style.display = "flex";
     }
     
     const initialLabel = document.getElementById("user-avatar-initial");
