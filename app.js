@@ -347,6 +347,7 @@ const DEFAULT_STATE = {
 let draftState = {};
 let liveState = {};
 let historyStack = [];
+let discordClientId = "1519819519193780494"; // Fallback Client ID
 let historyIndex = -1;
 let adminMode = false;
 let autoSaveTimer = null;
@@ -423,36 +424,36 @@ function sendRealEmailViaFormSubmit(subject, data) {
     .catch(err => console.error("Error sending real email:", err));
 }
 
-// --- Discord Channel Event Logging Webhook Dispatcher ---
-function sendDiscordWebhookNotification(type, title, fields) {
-    const webhookUrl = (liveState.theme && liveState.theme.discordWebhookUrl) || 
-                       (draftState.theme && draftState.theme.discordWebhookUrl);
-    if (!webhookUrl) return;
-
-    let color = 5814770; // Blurple default
-    if (type === "purchase") color = 1096065;      // Green
-    if (type === "contact") color = 10182117;      // Purple
+// --- Discord Bot API Logger Service ---
+function sendDiscordWebhookNotification(type, title, fields, customColor = null, customLink = null) {
+    let color = 5814770; // Blurple default (0x5865F2)
+    if (type === "purchase" || type === "payment_success" || type === "order_create") color = 3066993; // Green (0x2ECC71)
+    else if (type === "payment_fail" || type === "error") color = 15158332; // Red (0xE74C3C)
+    else if (type === "contact" || type === "ticket") color = 10182117; // Purple (0x9B59B6)
+    else if (type === "admin_action") color = 15105570; // Orange (0xE67E22)
+    else if (type === "logout") color = 9807270; // Grey (0x95A5A6)
+    
+    if (customColor !== null) {
+        color = customColor;
+    }
 
     const payload = {
-        username: "3M Studio Web Log",
-        avatar_url: "https://3m-store-3.vercel.app/assets/images/roblox_dev.png",
-        embeds: [{
-            title: title,
-            color: color,
-            fields: fields.map(f => ({ name: f.name, value: f.value, inline: !!f.inline })),
-            timestamp: new Date().toISOString()
-        }]
+        event: type,
+        title: title,
+        fields: fields,
+        color: color,
+        link: customLink || window.location.href
     };
 
-    fetch(webhookUrl, {
+    fetch("/api/discord-logger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     })
     .then(res => {
-        if (!res.ok) console.error("Discord Webhook status error:", res.status);
+        if (!res.ok) console.error("Discord Bot Log status error:", res.status);
     })
-    .catch(err => console.error("Discord Webhook network error:", err));
+    .catch(err => console.error("Discord Bot Log network error:", err));
 }
 
 function renderSMTPLogs() {
@@ -494,6 +495,16 @@ function getFormattedPrice(basePriceUSD, currency = currentCurrency, lang = curr
 
 // --- Initialize / Sync State ---
 function initStates() {
+    // Fetch Discord Client ID configuration from server
+    fetch("/api/config")
+        .then(res => res.json())
+        .then(data => {
+            if (data.clientId) {
+                discordClientId = data.clientId;
+            }
+        })
+        .catch(err => console.error("Error loading server config:", err));
+
     // 1. Get Live State
     const storedLive = localStorage.getItem("3m_studio_live_state");
     if (storedLive) {
@@ -582,7 +593,18 @@ function initStates() {
             applyDiscordLoginState(userObj);
             addAuditLog(`Discord login validated. Welcome, ${userObj.username}!`);
 
-            // Dispatch Discord Webhook log
+            // Dispatch Discord Webhook log for registration / login
+            const knownUsers = JSON.parse(localStorage.getItem("3m_known_users") || "[]");
+            const isNew = !knownUsers.includes(userObj.id);
+            if (isNew) {
+                knownUsers.push(userObj.id);
+                localStorage.setItem("3m_known_users", JSON.stringify(knownUsers));
+                sendDiscordWebhookNotification("registration", "👤 تسجيل مستخدم جديد للموقع", [
+                    { name: "اسم المستخدم (Username)", value: userObj.username, inline: true },
+                    { name: "معرف الحساب (User ID)", value: userObj.id, inline: true }
+                ]);
+            }
+
             sendDiscordWebhookNotification("login", "🔑 تسجيل دخول جديد للموقع", [
                 { name: "اسم المستخدم (Username)", value: userObj.username, inline: true },
                 { name: "معرف الحساب (User ID)", value: userObj.id, inline: true }
@@ -1436,9 +1458,19 @@ function renderOrdersList(filterQuery = "") {
             
             const ord = orders.find(x => x.id === ordId);
             if (ord) {
+                const oldStatus = ord.status;
                 ord.status = newStatus;
                 localStorage.setItem("3m_studio_orders", JSON.stringify(orders));
                 addAuditLog(`Updated order status [${ordId}] to ${newStatus.toUpperCase()}`);
+
+                // Log status change to Discord
+                sendDiscordWebhookNotification("admin_action", `⚙️ تعديل حالة الطلب ${ordId}`, [
+                    { name: "رقم الطلب (Order ID)", value: ordId, inline: true },
+                    { name: "العميل (Customer)", value: ord.name, inline: true },
+                    { name: "الخدمة (Service)", value: ord.service, inline: true },
+                    { name: "الحالة السابقة (Old Status)", value: oldStatus, inline: true },
+                    { name: "الحالة الجديدة (New Status)", value: newStatus, inline: true }
+                ]);
             }
         };
     });
@@ -1449,10 +1481,19 @@ function renderOrdersList(filterQuery = "") {
             if (confirm("هل أنت متأكد من رغبتك بحذف طلب الشراء هذا نهائيًا؟")) {
                 const idx = orders.findIndex(x => x.id === ordId);
                 if (idx > -1) {
+                    const deletedOrd = orders[idx];
                     orders.splice(idx, 1);
                     localStorage.setItem("3m_studio_orders", JSON.stringify(orders));
                     renderOrdersList(filterQuery);
                     addAuditLog(`Deleted order request code [${ordId}]`);
+
+                    // Log order deletion to Discord
+                    sendDiscordWebhookNotification("admin_action", `🗑️ حذف طلب شراء ${ordId}`, [
+                        { name: "رقم الطلب (Order ID)", value: ordId, inline: true },
+                        { name: "اسم العميل (Customer)", value: deletedOrd.name, inline: true },
+                        { name: "الخدمة المطلوبة (Service)", value: deletedOrd.service, inline: true },
+                        { name: "السعر (Price)", value: deletedOrd.price, inline: true }
+                    ]);
                 }
             }
         };
@@ -1534,6 +1575,12 @@ function exportOrdersToCSV() {
     document.body.removeChild(link);
 
     addAuditLog("Exported purchase requests log as CSV.");
+
+    // Log export operation
+    sendDiscordWebhookNotification("admin_action", "📥 تصدير سجل المبيعات والطلبات (CSV Export)", [
+        { name: "العملية (Operation)", value: "تصدير كافة الطلبات والمبيعات الحالية بصيغة ملف CSV", inline: true },
+        { name: "عدد السجلات (Records Count)", value: `${orders.length} طلب شراء`, inline: true }
+    ]);
 }
 
 // --- Wire all UI interactive events ---
@@ -1604,7 +1651,18 @@ function wireEvents() {
             
             addAuditLog(`Discord Login simulated: Authorized as ${mockUser.username}`);
             
-            // Dispatch Discord Webhook log
+            // Dispatch Discord Webhook log for registration / login
+            const knownUsers = JSON.parse(localStorage.getItem("3m_known_users") || "[]");
+            const isNew = !knownUsers.includes(mockUser.id);
+            if (isNew) {
+                knownUsers.push(mockUser.id);
+                localStorage.setItem("3m_known_users", JSON.stringify(knownUsers));
+                sendDiscordWebhookNotification("registration", "👤 تسجيل مستخدم جديد للموقع (تجريبي)", [
+                    { name: "اسم المستخدم (Username)", value: mockUser.username, inline: true },
+                    { name: "معرف الحساب (User ID)", value: mockUser.id, inline: true }
+                ]);
+            }
+
             sendDiscordWebhookNotification("login", "🔑 تسجيل دخول جديد للموقع (تجريبي)", [
                 { name: "اسم المستخدم (Username)", value: mockUser.username, inline: true },
                 { name: "معرف الحساب (User ID)", value: mockUser.id, inline: true }
@@ -1617,6 +1675,63 @@ function wireEvents() {
     const btnLogout = document.getElementById("btn-discord-logout");
     if (btnLogout) {
         btnLogout.onclick = handleDiscordLogout;
+    }
+
+    const btnEditProfile = document.getElementById("btn-discord-edit-profile");
+    if (btnEditProfile) {
+        btnEditProfile.onclick = () => {
+            const userStr = localStorage.getItem("discord_user");
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                const newUsername = prompt(
+                    currentLang === 'ar' ? 'أدخل اسم المستخدم الجديد:' : 'Enter new username:', 
+                    userObj.username
+                );
+                if (newUsername && newUsername.trim() !== "" && newUsername.trim() !== userObj.username) {
+                    const oldUsername = userObj.username;
+                    userObj.username = newUsername.trim();
+                    userObj.avatarLetter = userObj.username.charAt(0).toUpperCase();
+                    
+                    localStorage.setItem("discord_user", JSON.stringify(userObj));
+                    applyDiscordLoginState(userObj);
+                    
+                    addAuditLog(`User profile updated: ${oldUsername} -> ${newUsername}`);
+                    
+                    // Log to Discord
+                    sendDiscordWebhookNotification("profile_edit", "📝 تعديل بيانات الحساب (Profile Edit)", [
+                        { name: "اسم المستخدم القديم (Old Username)", value: oldUsername, inline: true },
+                        { name: "اسم المستخدم الجديد (New Username)", value: userObj.username, inline: true },
+                        { name: "معرف الحساب (User ID)", value: userObj.id, inline: true }
+                    ]);
+                }
+            }
+        };
+    }
+
+    const btnDeleteAccount = document.getElementById("btn-discord-delete-account");
+    if (btnDeleteAccount) {
+        btnDeleteAccount.onclick = () => {
+            const userStr = localStorage.getItem("discord_user");
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                const confirmDelete = confirm(
+                    currentLang === 'ar' ? 'هل أنت متأكد من حذف الحساب ومسح كافة بياناتك المحلية؟' : 'Are you sure you want to delete your account and clear all local data?'
+                );
+                if (confirmDelete) {
+                    // Send delete log first
+                    sendDiscordWebhookNotification("account_delete", "🗑️ حذف حساب مستخدم (Account Deleted)", [
+                        { name: "اسم المستخدم (Username)", value: userObj.username, inline: true },
+                        { name: "معرف الحساب (User ID)", value: userObj.id, inline: true }
+                    ]);
+
+                    handleDiscordLogout();
+                    
+                    localStorage.removeItem("discord_user");
+                    addAuditLog("User account deleted.");
+                    alert(currentLang === 'ar' ? 'تم حذف حسابك ومسح كافة البيانات بنجاح.' : 'Account deleted successfully.');
+                }
+            }
+        };
     }
 
     const btnHistory = document.getElementById("btn-show-orders-history");
@@ -1693,13 +1808,23 @@ function wireEvents() {
             });
 
             // Dispatch Discord Webhook log
-            sendDiscordWebhookNotification("contact", "✉️ رسالة تواصل جديدة", [
-                { name: "الاسم (Name)", value: newLead.name, inline: true },
-                { name: "البريد (Email)", value: newLead.email, inline: true },
-                { name: "ديسكورد (Discord)", value: newLead.discord, inline: true },
-                { name: "الخدمة المطلوبة (Service)", value: newLead.service, inline: true },
-                { name: "الرسالة (Message)", value: newLead.message }
-            ]);
+            if (newLead.service === "فتح تذكرة دعم فني") {
+                sendDiscordWebhookNotification("ticket", "🎟️ إنشاء تذكرة دعم جديدة", [
+                    { name: "الاسم (Name)", value: newLead.name, inline: true },
+                    { name: "البريد (Email)", value: newLead.email, inline: true },
+                    { name: "ديسكورد (Discord)", value: newLead.discord, inline: true },
+                    { name: "الموضوع (Service)", value: newLead.service, inline: true },
+                    { name: "تفاصيل التذكرة (Details)", value: newLead.message }
+                ]);
+            } else {
+                sendDiscordWebhookNotification("contact", "✉️ رسالة تواصل جديدة", [
+                    { name: "الاسم (Name)", value: newLead.name, inline: true },
+                    { name: "البريد (Email)", value: newLead.email, inline: true },
+                    { name: "ديسكورد (Discord)", value: newLead.discord, inline: true },
+                    { name: "الخدمة المطلوبة (Service)", value: newLead.service, inline: true },
+                    { name: "الرسالة (Message)", value: newLead.message }
+                ]);
+            }
 
             addAuditLog(`Contact Message submitted by ${newLead.name}. Real, simulated emails, and Discord Webhook dispatched.`);
             
@@ -1890,14 +2015,28 @@ function wireEvents() {
 
     if (submitLogin && passwordLogin) {
         const verifyPassword = () => {
-            if (passwordLogin.value === "maloka") {
+            const currentPass = localStorage.getItem("3m_admin_password") || "maloka";
+            if (passwordLogin.value === currentPass) {
                 errorLogin.style.display = "none";
                 modalLogin.classList.remove("active");
                 enableAdminMode(true);
+                
+                // Log successful admin login to Discord
+                sendDiscordWebhookNotification("admin_action", "🔑 تسجيل دخول ناجح للأدمن (Admin Login)", [
+                    { name: "العملية (Operation)", value: "تسجيل دخول إلى لوحة التحكم الأدمن", inline: true },
+                    { name: "الحالة (Status)", value: "ناجح (Authorized)", inline: true }
+                ]);
             } else {
                 errorLogin.style.display = "block";
                 passwordLogin.select();
                 addAuditLog("Access Denied - incorrect password attempt.", true);
+                
+                // Log failed admin login attempt to Discord
+                sendDiscordWebhookNotification("admin_action", "❌ محاولة دخول فاشلة للأدمن (Admin Login Failed)", [
+                    { name: "العملية (Operation)", value: "محاولة تسجيل دخول لوحة التحكم للأدمن", inline: true },
+                    { name: "الحالة (Status)", value: "فشل (Unauthorized - Wrong Password)", inline: true },
+                    { name: "المحاولة (Attempted Value)", value: passwordLogin.value || "Empty", inline: true }
+                ]);
             }
         };
 
@@ -2106,10 +2245,39 @@ function wireEvents() {
 
     if (tbPublish) {
         tbPublish.onclick = () => {
+            // Check for password change
+            const passInput = document.getElementById("admin-change-password");
+            let passChanged = false;
+            if (passInput && passInput.value.trim() !== "") {
+                const oldPass = localStorage.getItem("3m_admin_password") || "maloka";
+                const newPass = passInput.value.trim();
+                if (newPass !== oldPass) {
+                    localStorage.setItem("3m_admin_password", newPass);
+                    passChanged = true;
+                    passInput.value = "";
+                }
+            }
+
             liveState = JSON.parse(JSON.stringify(draftState));
             localStorage.setItem("3m_studio_live_state", JSON.stringify(liveState));
             addAuditLog("Site Published. Changes are now visible to everyone.");
             alert("تم نشر كافة التعديلات بنجاح وأصبحت مرئية الآن لزوار موقعك.");
+
+            // Log password change
+            if (passChanged) {
+                sendDiscordWebhookNotification("admin_action", "🔒 تغيير كلمة مرور الأدمن (Admin Password Changed)", [
+                    { name: "العملية (Operation)", value: "تغيير كلمة المرور الخاصة بلوحة تحكم المدير", inline: true },
+                    { name: "الحالة (Status)", value: "تمت بنجاح وحفظها محلياً", inline: true }
+                ]);
+            }
+
+            // Log publish action
+            sendDiscordWebhookNotification("admin_action", "🚀 نشر تعديلات الموقع (Site Published)", [
+                { name: "العملية (Operation)", value: "تم نشر التغييرات وحفظ التعديلات الجديدة للعامة", inline: true },
+                { name: "اللون الرئيسي (Primary)", value: liveState.theme.primaryColor || "#00f2fe", inline: true },
+                { name: "اللون الثانوي (Secondary)", value: liveState.theme.secondaryColor || "#7f00ff", inline: true },
+                { name: "الخلفية (Background)", value: liveState.theme.bgDark || "#050508", inline: true }
+            ]);
         };
     }
 
@@ -2899,3 +3067,41 @@ if (document.readyState === "loading") {
 } else {
     runPreloader();
 }
+
+// --- Global JavaScript Error Listener to Log Client-Side exceptions to Discord ---
+window.addEventListener('error', function(event) {
+    if (event.filename && event.filename.includes('app.js') && event.message.includes('discord-logger')) {
+        return;
+    }
+    
+    sendDiscordWebhookNotification("error", "❌ خطأ برمجي في المتصفح (Client JS Error)", [
+        { name: "الرسالة (Message)", value: event.message || "Unknown error", inline: false },
+        { name: "الملف (File)", value: event.filename || "Unknown file", inline: true },
+        { name: "السطر والعمود (Position)", value: `${event.lineno}:${event.colno}`, inline: true },
+        { name: "تفاصيل الخطأ (Stack)", value: event.error && event.error.stack ? event.error.stack.substring(0, 1000) : "No stack trace", inline: false }
+    ]);
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+    const reason = event.reason;
+    let message = "Unhandled Promise Rejection";
+    let stack = "No stack trace";
+
+    if (reason) {
+        if (reason instanceof Error) {
+            message = reason.message;
+            stack = reason.stack || "No stack trace";
+        } else if (typeof reason === 'string') {
+            message = reason;
+        } else {
+            try {
+                message = JSON.stringify(reason);
+            } catch(e) {}
+        }
+    }
+
+    sendDiscordWebhookNotification("error", "❌ خطأ وعود غير معالجة (Unhandled Promise Rejection)", [
+        { name: "السبب (Reason)", value: message, inline: false },
+        { name: "تفاصيل الخطأ (Stack)", value: stack.substring(0, 1000), inline: false }
+    ]);
+});

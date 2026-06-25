@@ -133,7 +133,9 @@
                         <div class="user-menu-dropdown" id="user-menu-dropdown">
                             <h5 id="user-display-name">GamerPro#1337</h5>
                             <button class="user-dropdown-btn" id="btn-show-orders-history">طلباتي السابقة</button>
-                            <button class="user-dropdown-btn logout-btn" id="btn-discord-logout">تسجيل الخروج</button>
+                            <button class="user-dropdown-btn" id="btn-discord-edit-profile" style="border-top: 1px solid rgba(255,255,255,0.05);">تعديل الحساب</button>
+                            <button class="user-dropdown-btn logout-btn" id="btn-discord-logout" style="border-top: 1px solid rgba(255,255,255,0.05);">تسجيل الخروج</button>
+                            <button class="user-dropdown-btn logout-btn" id="btn-discord-delete-account" style="color: #ff3333; border-top: 1px solid rgba(255,255,255,0.05);">حذف الحساب</button>
                         </div>
                     </div>
                 </div>
@@ -404,6 +406,7 @@
                                         <option value="برمجة بوت ديسكورد مخصص">برمجة بوت ديسكورد مخصص</option>
                                         <option value="تطوير موقع ويب">تطوير موقع ويب</option>
                                         <option value="تصاميم جرافيك مجتمعات">تصاميم جرافيك للمجتمعات</option>
+                                        <option value="فتح تذكرة دعم فني">فتح تذكرة دعم فني (Support Ticket)</option>
                                     </select>
                                 </div>
                             </div>
@@ -696,6 +699,10 @@
                     <div class="theme-color-row" style="margin-top:16px; flex-direction:column; align-items:flex-start; gap:8px;">
                         <label for="admin-webhook-url" style="width:100%;">رابط ويب-هوك ديسكورد (Discord Webhook URL)</label>
                         <input type="text" id="admin-webhook-url" placeholder="https://discord.com/api/webhooks/..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: var(--border-radius-sm); font-size: 0.8rem; font-family: monospace;">
+                    </div>
+                    <div class="theme-color-row" style="margin-top:16px; flex-direction:column; align-items:flex-start; gap:8px;">
+                        <label for="admin-change-password" style="width:100%;">تغيير كلمة مرور الأدمن (Change Admin Password)</label>
+                        <input type="password" id="admin-change-password" placeholder="أدخل كلمة المرور الجديدة..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: var(--border-radius-sm); font-size: 0.8rem;">
                     </div>
                 </div>
             </div>
