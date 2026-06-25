@@ -502,6 +502,40 @@ function initStates() {
     if (discordUser) {
         applyDiscordLoginState(JSON.parse(discordUser));
     }
+
+    // Check for real Discord OAuth2 token in URL fragment (Implicit Grant)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    if (accessToken) {
+        // Clear hash from URL instantly
+        window.history.replaceState({}, document.title, window.location.pathname);
+        addAuditLog("Verifying Discord authorization...");
+        
+        fetch("https://discord.com/api/users/@me", {
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to fetch Discord profile");
+            return res.json();
+        })
+        .then(data => {
+            const userObj = {
+                id: data.id,
+                username: data.discriminator && data.discriminator !== "0" ? `${data.username}#${data.discriminator}` : data.username,
+                avatar: data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : null,
+                avatarLetter: data.username.charAt(0).toUpperCase()
+            };
+            localStorage.setItem("discord_user", JSON.stringify(userObj));
+            applyDiscordLoginState(userObj);
+            addAuditLog(`Discord login validated. Welcome, ${userObj.username}!`);
+        })
+        .catch(err => {
+            console.error("Discord Auth Error:", err);
+            addAuditLog("Discord verification failed or token expired.", true);
+        });
+    }
 }
 
 // --- Push history for Undo/Redo ---
@@ -1156,7 +1190,27 @@ function setCurrency(currency) {
     addAuditLog(`Currency switched to ${currency}`);
 }
 
-// --- Discord simulated oauth authorization logic ---
+// --- Discord OAuth2 Authorization Logic ---
+function triggerDiscordRealOAuth() {
+    const clientId = "1519819519193780494";
+    
+    // Discord OAuth2 requires running the website through a web server (http/https protocol)
+    if (window.location.protocol === "file:") {
+        alert(currentLang === "ar" ? 
+            "عذرًا! تسجيل دخول ديسكورد يتطلب تشغيل الموقع عبر سيرفر محلي (مثل Live Server في VS Code) وليس كملف مباشر (file://). سيتم فتح نافذة تسجيل الدخول التجريبي كبديل." : 
+            "Discord login requires running the site through a local web server (like VS Code Live Server) and not directly as a local file (file://). Opening mock login as fallback."
+        );
+        const modal = document.getElementById("discord-auth-modal");
+        if (modal) modal.classList.add("active");
+        return;
+    }
+
+    const redirectUri = window.location.origin + window.location.pathname;
+    const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
+    
+    window.location.href = authUrl;
+}
+
 function triggerDiscordMockOAuth() {
     const modal = document.getElementById("discord-auth-modal");
     if (modal) {
@@ -1171,7 +1225,19 @@ function applyDiscordLoginState(user) {
 
     if (authArea && nameLabel && initialLabel) {
         nameLabel.innerText = user.username;
-        initialLabel.innerText = user.avatarLetter;
+        
+        if (user.avatar) {
+            initialLabel.innerText = "";
+            initialLabel.style.backgroundImage = `url(${user.avatar})`;
+            initialLabel.style.backgroundSize = "cover";
+            initialLabel.style.backgroundPosition = "center";
+            initialLabel.style.border = "2px solid var(--primary-color)";
+        } else {
+            initialLabel.innerText = user.avatarLetter;
+            initialLabel.style.backgroundImage = "none";
+            initialLabel.style.border = "none";
+        }
+        
         authArea.classList.add("logged-in");
         
         const purchaseDiscord = document.getElementById("purchase-discord");
@@ -1186,7 +1252,16 @@ function handleDiscordLogout() {
         authArea.classList.remove("logged-in");
     }
     
-    document.getElementById("user-orders-modal").classList.remove("active");
+    const initialLabel = document.getElementById("user-avatar-initial");
+    if (initialLabel) {
+        initialLabel.style.backgroundImage = "none";
+        initialLabel.style.border = "none";
+        initialLabel.innerText = "G";
+    }
+    
+    const userOrdersModal = document.getElementById("user-orders-modal");
+    if (userOrdersModal) userOrdersModal.classList.remove("active");
+    
     addAuditLog("Discord account logged out.");
 }
 
@@ -1425,7 +1500,7 @@ function wireEvents() {
     const discordAuth = document.getElementById("discord-oauth-auth");
 
     if (discordLoginBtn) {
-        discordLoginBtn.onclick = triggerDiscordMockOAuth;
+        discordLoginBtn.onclick = triggerDiscordRealOAuth;
     }
     if (discordCancel) {
         discordCancel.onclick = () => discordAuthModal.classList.remove("active");
