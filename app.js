@@ -1280,6 +1280,18 @@ function handleDiscordLogout() {
 
 // --- Store Purchase Request modal handlers ---
 function openPurchaseModal(prodId) {
+    const user = localStorage.getItem("discord_user");
+    if (!user) {
+        const msg = currentLang === "ar" 
+            ? "لإتمام عملية الشراء، يجب تسجيل الدخول باستخدام حسابك في ديسكورد أولاً.\n\nهل تريد تسجيل الدخول الآن؟"
+            : "To complete your purchase, you must log in with Discord first.\n\nDo you want to log in now?";
+            
+        if (confirm(msg)) {
+            triggerDiscordRealOAuth();
+        }
+        return;
+    }
+
     const srv = (adminMode ? draftState[currentLang] : liveState[currentLang]).services.find(x => x.id === prodId);
     if (!srv) return;
 
