@@ -7,7 +7,8 @@ const DEFAULT_STATE = {
     theme: {
         primaryColor: "#00f2fe",
         secondaryColor: "#7f00ff",
-        bgDark: "#050508"
+        bgDark: "#050508",
+        discordWebhookUrl: ""
     },
     sectionOrder: ["hero", "services", "portfolio", "why-choose-us", "statistics", "testimonials", "faq", "contact"],
     ar: {
@@ -422,6 +423,38 @@ function sendRealEmailViaFormSubmit(subject, data) {
     .catch(err => console.error("Error sending real email:", err));
 }
 
+// --- Discord Channel Event Logging Webhook Dispatcher ---
+function sendDiscordWebhookNotification(type, title, fields) {
+    const webhookUrl = (liveState.theme && liveState.theme.discordWebhookUrl) || 
+                       (draftState.theme && draftState.theme.discordWebhookUrl);
+    if (!webhookUrl) return;
+
+    let color = 5814770; // Blurple default
+    if (type === "purchase") color = 1096065;      // Green
+    if (type === "contact") color = 10182117;      // Purple
+
+    const payload = {
+        username: "3M Studio Web Log",
+        avatar_url: "https://3m-store-3.vercel.app/assets/images/roblox_dev.png",
+        embeds: [{
+            title: title,
+            color: color,
+            fields: fields.map(f => ({ name: f.name, value: f.value, inline: !!f.inline })),
+            timestamp: new Date().toISOString()
+        }]
+    };
+
+    fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => {
+        if (!res.ok) console.error("Discord Webhook status error:", res.status);
+    })
+    .catch(err => console.error("Discord Webhook network error:", err));
+}
+
 function renderSMTPLogs() {
     const container = document.getElementById("smtp-logs-container");
     if (!container) return;
@@ -548,6 +581,12 @@ function initStates() {
             localStorage.setItem("discord_user", JSON.stringify(userObj));
             applyDiscordLoginState(userObj);
             addAuditLog(`Discord login validated. Welcome, ${userObj.username}!`);
+
+            // Dispatch Discord Webhook log
+            sendDiscordWebhookNotification("login", "🔑 تسجيل دخول جديد للموقع", [
+                { name: "اسم المستخدم (Username)", value: userObj.username, inline: true },
+                { name: "معرف الحساب (User ID)", value: userObj.id, inline: true }
+            ]);
         })
         .catch(err => {
             console.error("Discord Auth Error:", err);
@@ -606,6 +645,9 @@ function applyState(state) {
         if (pickPrimary) { pickPrimary.value = state.theme.primaryColor; textPrimary.value = state.theme.primaryColor; }
         if (pickSecondary) { pickSecondary.value = state.theme.secondaryColor; textSecondary.value = state.theme.secondaryColor; }
         if (pickBg) { pickBg.value = state.theme.bgDark; textBg.value = state.theme.bgDark; }
+        
+        const webhookInput = document.getElementById("admin-webhook-url");
+        if (webhookInput) { webhookInput.value = state.theme.discordWebhookUrl || ""; }
     }
 
     // Apply texts depending on active language
@@ -1561,6 +1603,13 @@ function wireEvents() {
             applyDiscordLoginState(mockUser);
             
             addAuditLog(`Discord Login simulated: Authorized as ${mockUser.username}`);
+            
+            // Dispatch Discord Webhook log
+            sendDiscordWebhookNotification("login", "🔑 تسجيل دخول جديد للموقع (تجريبي)", [
+                { name: "اسم المستخدم (Username)", value: mockUser.username, inline: true },
+                { name: "معرف الحساب (User ID)", value: mockUser.id, inline: true }
+            ]);
+            
             discordAuthModal.classList.remove("active");
         };
     }
@@ -1643,7 +1692,16 @@ function wireEvents() {
                 "Message / الرسالة": newLead.message
             });
 
-            addAuditLog(`Contact Message submitted by ${newLead.name}. Real and simulated emails dispatched.`);
+            // Dispatch Discord Webhook log
+            sendDiscordWebhookNotification("contact", "✉️ رسالة تواصل جديدة", [
+                { name: "الاسم (Name)", value: newLead.name, inline: true },
+                { name: "البريد (Email)", value: newLead.email, inline: true },
+                { name: "ديسكورد (Discord)", value: newLead.discord, inline: true },
+                { name: "الخدمة المطلوبة (Service)", value: newLead.service, inline: true },
+                { name: "الرسالة (Message)", value: newLead.message }
+            ]);
+
+            addAuditLog(`Contact Message submitted by ${newLead.name}. Real, simulated emails, and Discord Webhook dispatched.`);
             
             contactForm.reset();
             contactForm.style.display = "none";
@@ -1733,7 +1791,18 @@ function wireEvents() {
                 "Details / التفاصيل": newOrder.details
             });
 
-            addAuditLog(`Purchase Request order created: [${orderId}] for ${newOrder.service}. Real and simulated emails dispatched.`);
+            // Dispatch Discord Webhook log
+            sendDiscordWebhookNotification("purchase", `🛒 طلب شراء جديد ${orderId}`, [
+                { name: "رقم الطلب (Order ID)", value: newOrder.id, inline: true },
+                { name: "العميل (Customer)", value: newOrder.name, inline: true },
+                { name: "البريد (Email)", value: newOrder.email, inline: true },
+                { name: "ديسكورد (Discord)", value: newOrder.discord, inline: true },
+                { name: "المنتج المطلوب (Product)", value: newOrder.service, inline: true },
+                { name: "السعر المتفق عليه (Price)", value: newOrder.price, inline: true },
+                { name: "تفاصيل إضافية (Details)", value: newOrder.details }
+            ]);
+
+            addAuditLog(`Purchase Request order created: [${orderId}] for ${newOrder.service}. Real, simulated emails, and Discord Webhook dispatched.`);
 
             document.getElementById("purchase-order-id").innerText = orderId;
             purchaseForm.style.display = "none";
@@ -2089,6 +2158,15 @@ function wireEvents() {
         colorBg.oninput = () => { textBg.value = colorBg.value; updateBg(colorBg.value); };
         textBg.onchange = () => { if (/^#[0-9A-F]{6}$/i.test(textBg.value)) { colorBg.value = textBg.value; updateBg(textBg.value); } };
         colorBg.onchange = () => pushToHistory(JSON.parse(JSON.stringify(draftState)), `Theme background color changed to ${colorBg.value}`);
+    }
+
+    const adminWebhookInput = document.getElementById("admin-webhook-url");
+    if (adminWebhookInput) {
+        adminWebhookInput.onchange = () => {
+            draftState.theme.discordWebhookUrl = adminWebhookInput.value.trim();
+            saveDraft();
+            pushToHistory(JSON.parse(JSON.stringify(draftState)), "Updated Discord Webhook URL config");
+        };
     }
 
     const imgModal = document.getElementById("admin-image-modal");
