@@ -511,11 +511,11 @@ function initStates() {
         window.history.replaceState({}, document.title, window.location.pathname);
         addAuditLog("Verifying Discord authorization...");
         
-        fetch("https://discord.com/api/users/@me", {
-            headers: {
-                "Authorization": `Bearer ${accessToken}`
-            }
-        })
+        const apiEndpoint = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+            ? `https://3m-store-3.vercel.app/api/discord-profile?token=${accessToken}`
+            : `/api/discord-profile?token=${accessToken}`;
+
+        fetch(apiEndpoint)
         .then(res => {
             if (!res.ok) throw new Error("Failed to fetch Discord profile");
             return res.json();
