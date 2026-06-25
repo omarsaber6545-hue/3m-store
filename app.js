@@ -404,6 +404,24 @@ function triggerSMTPSimulation(toEmail, subject, bodyContent) {
     renderSMTPLogs();
 }
 
+// --- Real Email Dispatcher via FormSubmit API ---
+function sendRealEmailViaFormSubmit(subject, data) {
+    fetch("https://formsubmit.co/ajax/omarsaber6545@gmail.com", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify({
+            "_subject": subject,
+            ...data
+        })
+    })
+    .then(res => res.json())
+    .then(d => console.log("Real Email Dispatched via FormSubmit:", d))
+    .catch(err => console.error("Error sending real email:", err));
+}
+
 function renderSMTPLogs() {
     const container = document.getElementById("smtp-logs-container");
     if (!container) return;
@@ -1616,7 +1634,16 @@ function wireEvents() {
             `;
             triggerSMTPSimulation(newLead.email, "Inquiry Received | 3M Studio", clientEmailBody);
 
-            addAuditLog(`Contact Message submitted by ${newLead.name}. simulated emails dispatched.`);
+            // Send real email notification to administrator
+            sendRealEmailViaFormSubmit(`3M Studio - رسالة تواصل جديدة من ${newLead.name}`, {
+                "Name / الاسم": newLead.name,
+                "Email / البريد": newLead.email,
+                "Discord / ديسكورد": newLead.discord,
+                "Service / الخدمة": newLead.service,
+                "Message / الرسالة": newLead.message
+            });
+
+            addAuditLog(`Contact Message submitted by ${newLead.name}. Real and simulated emails dispatched.`);
             
             contactForm.reset();
             contactForm.style.display = "none";
@@ -1695,7 +1722,18 @@ function wireEvents() {
             `;
             triggerSMTPSimulation(newOrder.email, `Order Confirmation ${orderId} | 3M Studio`, clientOrderBody);
 
-            addAuditLog(`Purchase Request order created: [${orderId}] for ${newOrder.service}`);
+            // Send real email notification to administrator
+            sendRealEmailViaFormSubmit(`3M Studio - طلب شراء جديد ${orderId} (${newOrder.service})`, {
+                "Order ID / رقم الطلب": newOrder.id,
+                "Customer / العميل": newOrder.name,
+                "Email / البريد": newOrder.email,
+                "Discord / ديسكورد": newOrder.discord,
+                "Product / المنتج": newOrder.service,
+                "Price / السعر": newOrder.price,
+                "Details / التفاصيل": newOrder.details
+            });
+
+            addAuditLog(`Purchase Request order created: [${orderId}] for ${newOrder.service}. Real and simulated emails dispatched.`);
 
             document.getElementById("purchase-order-id").innerText = orderId;
             purchaseForm.style.display = "none";
