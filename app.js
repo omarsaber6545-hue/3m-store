@@ -2944,6 +2944,7 @@ function setupCustomCursor() {
 }
 
 // --- Live Support Chat Widget Widget Engine ---
+let chatPollInterval = null;
 function setupLiveChatBot() {
     const trigger = document.getElementById("chat-trigger");
     const windowEl = document.getElementById("chat-window");
@@ -2954,30 +2955,189 @@ function setupLiveChatBot() {
     const chatBadge = document.getElementById("chat-badge");
     
     if (!trigger || !windowEl || !closeBtn || !chatInput || !chatSend || !chatMessages) return;
-    
+
+    let chatUsername = "Guest";
+    const discordUserStr = localStorage.getItem("discord_user");
+    if (discordUserStr) {
+        try {
+            const userObj = JSON.parse(discordUserStr);
+            chatUsername = userObj.global_name || userObj.username || "User";
+        } catch (e) {
+            console.error("Error parsing discord user:", e);
+        }
+    } else {
+        let guestId = localStorage.getItem("support_guest_id");
+        if (!guestId) {
+            guestId = Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem("support_guest_id", guestId);
+        }
+        chatUsername = `Guest-${guestId}`;
+    }
+
+    const renderedMessageIds = new Set();
+    let threadId = localStorage.getItem("support_chat_thread_id");
+    let isHistoryLoaded = false;
+
     trigger.onclick = () => {
         windowEl.classList.toggle("active");
         if (windowEl.classList.contains("active")) {
             if (chatBadge) chatBadge.style.display = "none";
             chatInput.focus();
+            
+            // Load history if we have a thread ID and haven't loaded it yet
+            if (threadId && !isHistoryLoaded) {
+                loadChatHistory();
+            }
+            
+            // Start polling for new replies
+            startPolling();
+        } else {
+            // Stop polling when closed to save resources
+            stopPolling();
         }
     };
     
     closeBtn.onclick = () => {
         windowEl.classList.remove("active");
+        stopPolling();
     };
+
+    function startPolling() {
+        stopPolling(); // Avoid duplicate intervals
+        if (!threadId) return;
+        
+        chatPollInterval = setInterval(() => {
+            pollNewMessages();
+        }, 5000);
+    }
+
+    function stopPolling() {
+        if (chatPollInterval) {
+            clearInterval(chatPollInterval);
+            chatPollInterval = null;
+        }
+    }
+
+    async function loadChatHistory() {
+        chatMessages.innerHTML = `<div class="loading-messages" style="color:var(--text-muted); font-size:0.75rem; text-align:center; padding:10px;">جاري تحميل المحادثة...</div>`;
+        try {
+            const response = await fetch(`/api/discord-chat?threadId=${threadId}`);
+            if (!response.ok) throw new Error("Failed to load chat");
+            
+            const data = await response.json();
+            chatMessages.innerHTML = ""; // Clear loader
+            
+            // Default greeting first
+            appendGreetingMessage();
+            
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    renderedMessageIds.add(msg.id);
+                    if (msg.isBot) {
+                        // User message sent via Bot
+                        let userText = "";
+                        if (msg.content.includes("💬 **الرسالة الأولى**: ")) {
+                            userText = msg.content.split("💬 **الرسالة الأولى**: ")[1].split("\n")[0];
+                        } else if (msg.content.includes("**: ")) {
+                            userText = msg.content.split("**: ")[1];
+                        } else {
+                            userText = msg.content;
+                        }
+                        appendMessageHTML(userText, "user", null, null, msg.timestamp);
+                    } else {
+                        // Human message (Admin reply)
+                        appendMessageHTML(msg.content, "bot", msg.author, msg.avatar, msg.timestamp);
+                    }
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            isHistoryLoaded = true;
+        } catch (err) {
+            console.error("Error loading chat history:", err);
+            chatMessages.innerHTML = "";
+            appendGreetingMessage();
+        }
+    }
+
+    async function pollNewMessages() {
+        if (!threadId) return;
+        try {
+            const response = await fetch(`/api/discord-chat?threadId=${threadId}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            let hasNew = false;
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    if (!renderedMessageIds.has(msg.id)) {
+                        renderedMessageIds.add(msg.id);
+                        if (!msg.isBot) {
+                            // Only append admin replies during active polling (user messages are appended locally)
+                            appendMessageHTML(msg.content, "bot", msg.author, msg.avatar, msg.timestamp);
+                            hasNew = true;
+                        }
+                    }
+                });
+                if (hasNew) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    // Play a soft notification sound if widget is active or show badge
+                    if (!windowEl.classList.contains("active") && chatBadge) {
+                        chatBadge.style.display = "block";
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error polling messages:", err);
+        }
+    }
     
-    const sendMessage = () => {
+    const sendMessage = async () => {
         const text = chatInput.value.trim();
         if (!text) return;
         
-        appendMessage(text, "user");
+        // Append locally instantly for user feedback
+        appendMessageHTML(text, "user");
         chatInput.value = "";
+        chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        setTimeout(() => {
-            const botReply = getBotResponse(text);
-            appendMessage(botReply, "bot");
-        }, 1000);
+        try {
+            if (!threadId) {
+                // First message: Create a thread
+                const response = await fetch("/api/discord-chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "create",
+                        username: chatUsername,
+                        message: text
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    threadId = data.threadId;
+                    localStorage.setItem("support_chat_thread_id", threadId);
+                    isHistoryLoaded = true;
+                    startPolling();
+                } else {
+                    console.error("Failed to create support thread");
+                }
+            } else {
+                // Subsequent message: Send to thread
+                await fetch("/api/discord-chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "send",
+                        threadId: threadId,
+                        username: chatUsername,
+                        message: text
+                    })
+                });
+            }
+        } catch (err) {
+            console.error("Error sending live support message:", err);
+        }
     };
     
     chatSend.onclick = sendMessage;
@@ -2985,14 +3145,32 @@ function setupLiveChatBot() {
         if (e.key === "Enter") sendMessage();
     };
     
-    function appendMessage(text, sender) {
+    function appendGreetingMessage() {
+        const text = currentLang === "ar" 
+            ? "أهلاً بك! 👋 مرحبًا بك في 3M Studio. كيف يمكننا مساعدتك في بناء مشروع أحلامك اليوم؟" 
+            : "Welcome! 👋 How can we help you build your dream project today?";
+        appendMessageHTML(text, "bot", "3M Bot", null, new Date().toISOString());
+    }
+
+    function appendMessageHTML(text, sender, authorName = null, avatarUrl = null, timestampStr = null) {
         const msg = document.createElement("div");
         msg.className = `message ${sender}`;
         
-        const now = new Date();
+        const now = timestampStr ? new Date(timestampStr) : new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
+        let headerHTML = "";
+        if (sender === "bot" && authorName) {
+            headerHTML = `
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                    ${avatarUrl ? `<img src="${avatarUrl}" style="width:20px; height:20px; border-radius:50%; object-fit:cover;">` : `<div style="width:20px; height:20px; border-radius:50%; background:var(--primary-color); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:bold; color:white;">3M</div>`}
+                    <span style="font-size:0.75rem; color:var(--primary-color); font-weight:bold;">${escapeHTML(authorName)}</span>
+                </div>
+            `;
+        }
+        
         msg.innerHTML = `
+            ${headerHTML}
             <div class="message-content">${escapeHTML(text)}</div>
             <div class="message-time">${timeStr}</div>
         `;
@@ -3002,41 +3180,13 @@ function setupLiveChatBot() {
     }
     
     function escapeHTML(str) {
+        if (!str) return "";
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
-    
-    function getBotResponse(userText) {
-        const txt = userText.toLowerCase();
-        
-        if (currentLang === "ar") {
-            if (txt.includes("روبلوكس") || txt.includes("roblox") || txt.includes("لعب")) {
-                return "نقوم بتصميم وتطوير ألعاب روبلوكس كاملة، برمجة سكربتات وأنظمة متطورة، بناء خرائط وتصميم واجهات مستخدم متجاوبة.";
-            }
-            if (txt.includes("ديسكورد") || txt.includes("discord") || txt.includes("بوت")) {
-                return "نقدم خدمات إعداد وتصميم سيرفرات ديسكورد احترافية، برمجة بوتات خاصة بربط قواعد البيانات، وأنظمة تذاكر ودعم فني بالأزرار.";
-            }
-            if (txt.includes("سعر") || txt.includes("أسعار") || txt.includes("بكم") || txt.includes("كم")) {
-                return "تتفاوت الأسعار حسب المتطلبات المخصصة. يمكنك الاطلاع على الأسعار الأساسية للخدمات في بطاقات الخدمات وتغيير العملة من الأعلى.";
-            }
-            if (txt.includes("موقع") || txt.includes("برمجة") || txt.includes("ويب")) {
-                return "نقوم بتطوير مواقع مجتمعات الألعاب، صفحات الهبوط، ولوحات التحكم المخصصة لربط قواعد بيانات الألعاب مباشرة.";
-            }
-            return "شكرًا لتواصلك معنا! يمكنك أيضًا ملء نموذج 'اتصل بنا' في أسفل الصفحة أو الانضمام لسيرفر الديسكورد للتحدث مع أحد مطورينا مباشرة.";
-        } else {
-            if (txt.includes("roblox") || txt.includes("game")) {
-                return "We design and develop full Roblox games, custom scripting systems, high-quality maps, and responsive user interfaces.";
-            }
-            if (txt.includes("discord") || txt.includes("bot")) {
-                return "We offer professional Discord server configurations, custom bot development with database integrations, and ticket verification systems.";
-            }
-            if (txt.includes("price") || txt.includes("cost") || txt.includes("how much")) {
-                return "Pricing varies by scope. You can review the base rates directly on the service cards, and convert them to your currency of choice using the switcher.";
-            }
-            if (txt.includes("website") || txt.includes("web") || txt.includes("dev")) {
-                return "We build gaming community portals, custom portfolios, and advanced administrative control dashboards.";
-            }
-            return "Thank you for reaching out! You can also fill the contact form at the bottom or join our Discord server to speak with a project manager directly.";
-        }
+
+    // Load initial greeting
+    if (chatMessages.children.length === 0) {
+        appendGreetingMessage();
     }
 }
 
