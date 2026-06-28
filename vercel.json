@@ -1,7 +1,10 @@
 {
-  "cleanUrls": true,
-  "framework": null,
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" }
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
