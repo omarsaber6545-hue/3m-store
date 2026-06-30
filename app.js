@@ -635,7 +635,15 @@ function triggerSMTPSimulation(toEmail, subject, bodyContent) {
 }
 
 // --- Real Email Dispatcher via FormSubmit API ---
+let lastEmailSentTime = 0;
 function sendRealEmailViaFormSubmit(subject, data) {
+    const now = Date.now();
+    if (now - lastEmailSentTime < 10000) {
+        console.warn("Anti-spam block: Email rate limit exceeded. Skipping email send.");
+        return;
+    }
+    lastEmailSentTime = now;
+
     fetch("https://formsubmit.co/ajax/omarsaber6545@gmail.com", {
         method: "POST",
         headers: { 
@@ -791,10 +799,68 @@ function initStates() {
         applyState(liveState);
     }
 
+    // Fetch live counters stats from PostgreSQL database to keep it 100% real
+    fetch("/api/portal?action=admin_stats")
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.stats) {
+                liveState.statistics[0].value = data.stats.totalOrders;
+                liveState.statistics[1].value = data.stats.totalUsers;
+                liveState.statistics[2].value = data.stats.totalOrders;
+                renderStatistics(liveState.statistics);
+            }
+        })
+        .catch(err => console.error("Error loading live stats from database:", err));
+
+    // Fetch live reviews from database
+    fetch("/api/portal?action=reviews_list")
+        .then(res => res.json())
+        .then(data => {
+            if (data.reviews && data.reviews.length > 0) {
+                const dbTestimonials = data.reviews.map(rev => {
+                    return {
+                        id: rev.id,
+                        name: rev.username || "Client / عميل",
+                        avatar: rev.avatar ? `https://cdn.discordapp.com/avatars/${rev.user_id}/${rev.avatar}.png` : null,
+                        role_ar: "عميل مستقل",
+                        role_en: "Independent Client",
+                        rating: rev.rating,
+                        comment_ar: rev.comment,
+                        comment_en: rev.comment
+                    };
+                });
+                liveState.testimonials = dbTestimonials;
+                if (typeof langDatabase !== 'undefined') {
+                    langDatabase.testimonials = dbTestimonials;
+                }
+                renderTestimonials(dbTestimonials);
+            }
+        })
+        .catch(err => console.error("Error loading reviews from database:", err));
+
     // Check if user is logged in with Discord
     const discordUser = localStorage.getItem("discord_user");
     if (discordUser) {
-        applyDiscordLoginState(JSON.parse(discordUser));
+        const user = JSON.parse(discordUser);
+        applyDiscordLoginState(user);
+        
+        // Fetch latest stats from PostgreSQL to keep it real and synchronized
+        fetch(`/api/portal?action=profile&userId=${user.id}`)
+        .then(res => res.json())
+        .then(dbData => {
+            if (!dbData.error) {
+                user.xp = dbData.xp;
+                user.level = dbData.level;
+                user.points = dbData.points;
+                user.streak = dbData.streak;
+                user.last_daily_claim = dbData.last_daily_claim;
+                userXP = dbData.xp;
+                userLevel = dbData.level;
+                localStorage.setItem("discord_user", JSON.stringify(user));
+                initAchievements();
+            }
+        })
+        .catch(err => console.error("Error syncing stats:", err));
     }
 
     // Check for real Discord OAuth2 token in URL fragment (Implicit Grant)
@@ -819,10 +885,18 @@ function initStates() {
                 id: data.id,
                 username: data.discriminator && data.discriminator !== "0" ? `${data.username}#${data.discriminator}` : data.username,
                 avatar: data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : null,
-                avatarLetter: data.username.charAt(0).toUpperCase()
+                avatarLetter: data.username.charAt(0).toUpperCase(),
+                xp: data.xp || 0,
+                level: data.level || 1,
+                points: data.points || 0,
+                streak: data.streak || 0,
+                last_daily_claim: data.last_daily_claim || null
             };
+            userXP = userObj.xp;
+            userLevel = userObj.level;
             localStorage.setItem("discord_user", JSON.stringify(userObj));
             applyDiscordLoginState(userObj);
+            initAchievements();
             addAuditLog(`Discord login validated. Welcome, ${userObj.username}!`);
 
             // Dispatch Discord Webhook log for registration / login
@@ -1911,7 +1985,11 @@ function renderUserOrdersHistory(discordUsername) {
     const list = document.getElementById("user-orders-list");
     if (!list) return;
 
-    const userOrders = orders.filter(o => o.discord.toLowerCase() === discordUsername.toLowerCase());
+    const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+    const userOrders = orders.filter(o => {
+        if (loggedUser && loggedUser.id && o.userId === loggedUser.id) return true;
+        return o.discord && o.discord.toLowerCase() === discordUsername.toLowerCase();
+    });
 
     const avatarLarge = document.getElementById("user-orders-avatar");
     const usernameLabel = document.getElementById("user-orders-username");
@@ -1931,19 +2009,71 @@ function renderUserOrdersHistory(discordUsername) {
         return;
     }
 
-    list.innerHTML = userOrders.map(o => `
+    list.innerHTML = userOrders.map(o => {
+        const showReviewBtn = (o.status === 'paid' || o.status === 'completed' || o.status === 'paid_review') 
+            ? `<button class="btn btn-secondary btn-sm" style="margin-top:8px; display:inline-block;" onclick="promptLeaveReview('${o.id}')">⭐ تقييم / Rate</button>`
+            : '';
+        return `
         <div class="history-order-card">
             <div class="history-order-header">
                 <span class="history-order-title">${o.service}</span>
                 <span class="history-order-id">${o.id}</span>
             </div>
-            <div class="history-order-meta">
+            <div class="history-order-meta" style="flex-direction:column; align-items:flex-start;">
                 <span class="history-order-price">${o.price}</span>
-                <span class="order-status-badge ${o.status || 'pending'}">${o.status === 'pending' ? 'معلق' : o.status === 'progress' ? 'قيد التنفيذ' : o.status === 'completed' ? 'مكتمل' : 'ملغي'}</span>
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-top:5px;">
+                    <span class="order-status-badge ${o.status || 'pending'}">${o.status === 'pending' ? 'معلق' : o.status === 'progress' ? 'قيد التنفيذ' : o.status === 'paid' || o.status === 'completed' ? 'مكتمل' : 'ملغي'}</span>
+                    ${showReviewBtn}
+                </div>
             </div>
         </div>
-    `).join("");
+        `;
+    }).join("");
 }
+
+window.promptLeaveReview = function(orderId) {
+    const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+    if (!loggedUser || !loggedUser.id) {
+        showToast("يرجى تسجيل الدخول أولاً للمطالبة بالتقييم", "warning");
+        return;
+    }
+    
+    const ratingStr = prompt("أدخل التقييم من 1 إلى 5 نجوم (Enter rating 1-5):", "5");
+    if (!ratingStr) return;
+    
+    const rating = parseInt(ratingStr);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+        showToast("تقييم غير صالح / Invalid rating", "warning");
+        return;
+    }
+    
+    const comment = prompt("اكتب تعليقك على الخدمة (Write your comment):", "");
+    if (!comment) return;
+    
+    fetch("/api/portal?action=submit_review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            userId: loggedUser.id,
+            orderId: orderId,
+            rating: rating,
+            comment: comment
+        })
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.error || "Failed to submit review", "error");
+        } else {
+            showToast("تم إضافة تقييمك بنجاح! شكرًا لك.", "success");
+            location.reload();
+        }
+    })
+    .catch(err => {
+        console.error("Error submitting review:", err);
+        showToast("Error connecting to server", "error");
+    });
+};
 
 // --- Export Orders database to CSV file download ---
 function exportOrdersToCSV() {
@@ -4645,44 +4775,40 @@ setInterval(() => {
     if (dcStaffEl) dcStaffEl.innerText = dcOnline;
 }, 5000);
 
-// --- Live Activity Feed Simulator ---
-const simulatedActivities = [
-    { icon: "🛒", ar: "طلب شراء جديد لخدمة ديسكورد بوت من مصر!", en: "New Discord Bot order placed from Egypt!" },
-    { icon: "🏆", ar: "تم ترقية عميل إلى رتبة VIP Gold!", en: "A customer was promoted to VIP Gold rank!" },
-    { icon: "🎁", ar: "عميل فتح صندوق الحظ وربح 100 XP!", en: "A customer opened the Mystery Box and won 100 XP!" },
-    { icon: "🚀", ar: "تم تسليم مشروع خريطة روبلوكس لعميل في السعودية!", en: "Roblox map project delivered to a client in Saudi Arabia!" },
-    { icon: "⭐", ar: "تقييم جديد بـ 5 نجوم لخدمة تطوير الويب!", en: "New 5-star review left for Web Development service!" }
-];
-
+// --- Live Activity Feed (PostgreSQL Database-backed) ---
 const feedContainer = document.getElementById("live-activity-feed");
-function addActivityFeedItem(item) {
+function updateRealActivityFeed() {
     if (!feedContainer) return;
-    const div = document.createElement("div");
-    div.className = "feed-item";
-    const text = currentLang === "ar" ? item.ar : item.en;
-    div.innerHTML = `
-        <span class="feed-icon">${item.icon}</span>
-        <div class="feed-details">
-            <span>${text}</span>
-            <span class="feed-time">الآن / Just Now</span>
-        </div>
-    `;
-    feedContainer.prepend(div);
     
-    // Cap items at 8
-    if (feedContainer.children.length > 8) {
-        feedContainer.removeChild(feedContainer.lastChild);
-    }
+    fetch("/api/portal?action=activity_feed")
+    .then(res => res.json())
+    .then(data => {
+        if (data.feed && data.feed.length > 0) {
+            feedContainer.innerHTML = "";
+            data.feed.slice(0, 8).forEach(item => {
+                const div = document.createElement("div");
+                div.className = "feed-item";
+                const text = currentLang === "ar" ? item.ar : item.en;
+                div.innerHTML = `
+                    <span class="feed-icon">${item.icon}</span>
+                    <div class="feed-details">
+                        <span>${text}</span>
+                        <span class="feed-time">الآن / Live</span>
+                    </div>
+                `;
+                feedContainer.appendChild(div);
+            });
+        } else {
+            feedContainer.innerHTML = `<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:0.8rem;">لا توجد نشاطات حية حالياً / No live activities yet</div>`;
+        }
+    })
+    .catch(err => console.error("Error loading activity feed:", err));
 }
 
-// Load initial items
-simulatedActivities.forEach(act => addActivityFeedItem(act));
-// Push new items occasionally
-setInterval(() => {
-    const randomAct = simulatedActivities[Math.floor(Math.random() * simulatedActivities.length)];
-    addActivityFeedItem(randomAct);
-    showToast(currentLang === "ar" ? randomAct.ar : randomAct.en, "info");
-}, 15000);
+// Initial load
+updateRealActivityFeed();
+// Poll actual backend activities every 30 seconds
+setInterval(updateRealActivityFeed, 30000);
 
 // --- User Profile, XP Engine & Mystery Box ---
 let userXP = parseInt(localStorage.getItem("3m_user_xp")) || 240;
@@ -4751,47 +4877,43 @@ if (box3d && btnOpenBox) {
 }
 
 function openMysteryBox() {
-    const todayStr = new Date().toISOString().split("T")[0];
-    if (lastMysteryBoxOpen === todayStr) {
-        showToast(currentLang === "ar" ? "لقد قمت بفتح صندوق الحظ اليوم بالفعل. عد غداً!" : "You have already opened the box today. Come back tomorrow!", "warning");
+    const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+    if (!loggedUser || !loggedUser.id) {
+        showToast(currentLang === "ar" ? "يرجى تسجيل الدخول أولاً للمطالبة بالجوائز اليومية!" : "Please log in with Discord first to claim daily rewards!", "warning");
         return;
     }
-    
+
     // Trigger animation
     box3d.classList.add("shake");
     btnOpenBox.disabled = true;
-    
-    setTimeout(() => {
+
+    fetch("/api/portal?action=claim_reward", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: loggedUser.id })
+    })
+    .then(async res => {
+        const resData = await res.json();
         box3d.classList.remove("shake");
+        
+        if (!res.ok) {
+            showToast(resData.error || "Failed to claim reward", "warning");
+            btnOpenBox.disabled = false;
+            return;
+        }
+
         box3d.classList.add("open");
-        
-        // Generate Reward
-        const rewards = [
-            { xp: 120, label: "120 XP" },
-            { xp: 250, label: "250 XP" },
-            { coupon: "SUMMER20", label: "كوبون خصم 20%" },
-            { xp: 50, label: "50 XP" }
-        ];
-        const win = rewards[Math.floor(Math.random() * rewards.length)];
-        
         setTimeout(() => {
-            if (win.xp) {
-                userXP += win.xp;
-                const maxXp = userLevel * 200;
-                if (userXP >= maxXp) {
-                    userXP -= maxXp;
-                    userLevel += 1;
-                    showToast(currentLang === "ar" ? "🎉 تهانينا! تمت ترقيتك لمستوى جديد!" : "🎉 Congratulations! Level Up!", "success");
-                }
-                localStorage.setItem("3m_user_xp", userXP);
-                localStorage.setItem("3m_user_level", userLevel);
-                showToast(currentLang === "ar" ? `🎁 ربحت ${win.label}!` : `🎁 You won ${win.label}!`, "success");
-            } else if (win.coupon) {
-                showToast(currentLang === "ar" ? `🎁 ربحت كود الخصم ${win.coupon}!` : `🎁 You won coupon code ${win.coupon}!`, "success");
-            }
+            userXP = resData.xp;
+            userLevel = resData.level;
+            loggedUser.xp = resData.xp;
+            loggedUser.level = resData.level;
+            loggedUser.points = resData.pointsEarned + (loggedUser.points || 0);
+            loggedUser.streak = resData.streak;
+            loggedUser.last_daily_claim = new Date().toISOString().split("T")[0];
             
-            lastMysteryBoxOpen = todayStr;
-            localStorage.setItem("3m_mystery_box_last", lastMysteryBoxOpen);
+            localStorage.setItem("discord_user", JSON.stringify(loggedUser));
+            showToast(currentLang === "ar" ? `🎁 ربحت ${resData.pointsEarned} نقطة و ${resData.xpEarned} XP!` : `🎁 You won ${resData.pointsEarned} points and ${resData.xpEarned} XP!`, "success");
             
             initAchievements();
             
@@ -4799,10 +4921,14 @@ function openMysteryBox() {
                 box3d.classList.remove("open");
                 btnOpenBox.disabled = false;
             }, 2000);
-            
         }, 600);
-        
-    }, 1200);
+    })
+    .catch(err => {
+        console.error("Box open error:", err);
+        box3d.classList.remove("shake");
+        btnOpenBox.disabled = false;
+        showToast("Server Connection Error / خطأ في الاتصال بالخادم", "error");
+    });
 }
 
 // --- Theme Customizer Loader & Saved State Handler ---
