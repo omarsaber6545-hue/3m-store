@@ -5032,6 +5032,7 @@ html[dir="ltr"] .coupon-badge-on-card {
                     <span class="chat-status" id="chat-status">مساعد ذكي نشط</span>
                 </div>
                 <button class="chat-human-btn" id="chat-human-btn" title="تحدث مع الدعم البشري" style="background:rgba(255,255,255,0.08); border:none; border-radius:6px; padding:6px 10px; color:#ffffff; font-size:0.7rem; cursor:pointer; margin-right:auto; margin-left:12px; display:flex; align-items:center; gap:6px; transition:all 0.3s ease; border: 1px solid rgba(255, 255, 255, 0.1);"><span style="color:#2ecc71; animation: blink 1.5s infinite;">●</span> دعم بشري</button>
+                <button id="chat-reset-btn" title="إنهاء المحادثة" style="background:rgba(255,77,77,0.15); border:1px solid rgba(255,77,77,0.25); border-radius:6px; padding:6px 8px; color:#ff4d4d; font-size:0.7rem; cursor:pointer; margin-left:8px; display:none; align-items:center; justify-content:center; transition:all 0.3s ease;">❌ إنهاء</button>
                 <button class="chat-close" id="chat-close" aria-label="أغلق المحادثة">&times;</button>
             </div>
             <div class="chat-messages" id="chat-messages">
@@ -10726,6 +10727,7 @@ function setupLiveChatBot() {
     const chatBadge = document.getElementById("chat-badge");
     const humanBtn = document.getElementById("chat-human-btn");
     const statusEl = document.getElementById("chat-status");
+    const resetBtn = document.getElementById("chat-reset-btn");
     
     if (!trigger || !windowEl || !closeBtn || !chatInput || !chatSend || !chatMessages || !humanBtn || !statusEl) return;
 
@@ -10792,6 +10794,22 @@ function setupLiveChatBot() {
         stopPolling();
     };
 
+    if (resetBtn) {
+        resetBtn.onclick = () => {
+            if (confirm(currentLang === "ar" ? "هل أنت متأكد من إنهاء تذكرة الدعم الحالية؟" : "Are you sure you want to end the current support session?")) {
+                localStorage.removeItem("support_chat_thread_id");
+                threadId = null;
+                isHistoryLoaded = false;
+                renderedMessageIds.clear();
+                if (socket) {
+                    socket.disconnect();
+                    socket = null;
+                }
+                switchToHumanMode();
+            }
+        };
+    }
+
     // Toggle human/AI mode
     humanBtn.onclick = () => {
         if (currentMode === "ai") {
@@ -10817,6 +10835,9 @@ function setupLiveChatBot() {
         // Show input area in AI mode
         const chatInputArea = document.querySelector(".chat-input-area");
         if (chatInputArea) chatInputArea.style.display = "flex";
+        
+        // Hide reset button in AI mode
+        if (resetBtn) resetBtn.style.display = "none";
         
         // Update Header UI
         statusEl.innerText = currentLang === "ar" ? "مساعد ذكي نشط" : "AI Assistant Active";
@@ -10963,6 +10984,8 @@ function setupLiveChatBot() {
                 // Update Header Status with Ticket ID & status
                 statusEl.innerText = `${currentLang === "ar" ? "تذكرة" : "Ticket"}: ${ticketId} | ${currentLang === "ar" ? "في انتظار الرد" : "Waiting for Staff"}`;
                 statusEl.style.color = "#ffae19";
+                
+                if (resetBtn) resetBtn.style.display = "flex";
 
                 chatMessages.innerHTML = "";
                 appendHumanInfoTip();
@@ -10988,7 +11011,6 @@ function setupLiveChatBot() {
         currentMode = "human";
         localStorage.setItem("support_chat_mode", "human");
         
-        // Update Header UI
         statusEl.innerText = currentLang === "ar" ? "دعم بشري نشط" : "Human Support Active";
         statusEl.style.color = "#2ecc71";
         humanBtn.innerHTML = `<span style="color:#3498db;">●</span> ${currentLang === "ar" ? "مساعد ذكي" : "AI Assistant"}`;
@@ -10996,11 +11018,18 @@ function setupLiveChatBot() {
         
         initSocketConnection();
         
+        const chatInputArea = document.querySelector(".chat-input-area");
         const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
         const clientUserId = loggedUser ? loggedUser.id : null;
+
         if (threadId) {
+            if (chatInputArea) chatInputArea.style.display = "flex";
+            if (resetBtn) resetBtn.style.display = "flex";
+            statusEl.innerText = `${currentLang === "ar" ? "تذكرة" : "Ticket"}: ${threadId} | ${currentLang === "ar" ? "نشطة" : "Active"}`;
+            statusEl.style.color = "#2ecc71";
             socket.emit('join', { ticketId: threadId, username: chatUsername, userId: clientUserId });
         } else {
+            if (resetBtn) resetBtn.style.display = "none";
             renderEmptyHumanChat();
         }
     }
