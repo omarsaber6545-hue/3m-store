@@ -3991,6 +3991,11 @@ function setupLiveChatBot() {
             if (chatBadge) chatBadge.style.display = "none";
             chatInput.focus();
             
+            if (!threadId) {
+                threadId = `TCK-${Math.floor(10000 + Math.random() * 90000)}`;
+                localStorage.setItem("support_chat_thread_id", threadId);
+            }
+            initSocketConnection();
             initChatMode();
         } else {
             stopPolling();
@@ -4087,8 +4092,10 @@ function setupLiveChatBot() {
         
         socket.on('connect', () => {
             console.log("Connected to live support bridge socket");
+            const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+            const clientUserId = loggedUser ? loggedUser.id : null;
             if (threadId) {
-                socket.emit('join', { ticketId: threadId, username: chatUsername, userId: null });
+                socket.emit('join', { ticketId: threadId, username: chatUsername, userId: clientUserId });
             }
         });
         
@@ -4114,6 +4121,20 @@ function setupLiveChatBot() {
             if (!renderedMessageIds.has(msgKey)) {
                 renderedMessageIds.add(msgKey);
                 if (msg.is_staff) {
+                    // Takeover logic: Switch to human support mode if currently in AI mode
+                    if (currentMode === "ai") {
+                        currentMode = "human";
+                        localStorage.setItem("support_chat_mode", "human");
+                        statusEl.innerText = currentLang === "ar" ? "دعم بشري نشط" : "Human Support Active";
+                        statusEl.style.color = "#2ecc71";
+                        humanBtn.innerHTML = `<span style="color:#3498db;">●</span> ${currentLang === "ar" ? "مساعد ذكي" : "AI Assistant"}`;
+                        humanBtn.title = currentLang === "ar" ? "العودة للمساعد الذكي" : "Switch to AI";
+                        showToast(currentLang === "ar" ? "انضم مسؤول الدعم الفني للمحادثة!" : "A support representative has joined the chat!", "info");
+                        
+                        chatMessages.innerHTML = "";
+                        appendHumanInfoTip();
+                    }
+                    
                     appendMessageHTML(msg.content, "bot", msg.author, msg.avatar || null, msg.timestamp, msg.attachments);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                     if (!windowEl.classList.contains("active") && chatBadge) {
@@ -4121,6 +4142,21 @@ function setupLiveChatBot() {
                     }
                 }
             }
+        });
+
+        socket.on('ai_reply', ({ reply }) => {
+            // Remove typing indicator elements
+            const typingIndicators = document.querySelectorAll(".message.bot");
+            typingIndicators.forEach(el => {
+                if (el.querySelector(".dot-typing")) {
+                    el.remove();
+                }
+            });
+
+            appendMessageHTML(reply, "bot", "3M AI", null);
+            aiChatHistory.push({ sender: "bot", text: reply, timestamp: new Date().toISOString() });
+            localStorage.setItem("support_ai_history", JSON.stringify(aiChatHistory));
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
     }
 
@@ -4136,8 +4172,10 @@ function setupLiveChatBot() {
         
         initSocketConnection();
         
+        const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+        const clientUserId = loggedUser ? loggedUser.id : null;
         if (threadId) {
-            socket.emit('join', { ticketId: threadId, username: chatUsername, userId: null });
+            socket.emit('join', { ticketId: threadId, username: chatUsername, userId: clientUserId });
         } else {
             renderEmptyHumanChat();
         }
@@ -4158,6 +4196,16 @@ function setupLiveChatBot() {
     }
 
     async function sendAIChatMessage(text) {
+        const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+        const clientUserId = loggedUser ? loggedUser.id : null;
+
+        if (!threadId) {
+            threadId = `TCK-${Math.floor(10000 + Math.random() * 90000)}`;
+            localStorage.setItem("support_chat_thread_id", threadId);
+        }
+        
+        initSocketConnection();
+
         appendMessageHTML(text, "user");
         const timestamp = new Date().toISOString();
         aiChatHistory.push({ sender: "user", text, timestamp });
@@ -4167,38 +4215,14 @@ function setupLiveChatBot() {
         const typingId = appendTypingIndicator();
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        try {
-            const response = await fetch("/api/ai-chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    message: text,
-                    history: aiChatHistory
-                })
-            });
-            
-            removeTypingIndicator(typingId);
-            
-            if (response.ok) {
-                const data = await response.json();
-                appendMessageHTML(data.reply, "bot", "3M AI", null);
-                aiChatHistory.push({ sender: "bot", text: data.reply, timestamp: new Date().toISOString() });
-                localStorage.setItem("support_ai_history", JSON.stringify(aiChatHistory));
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            } else {
-                appendMessageHTML(
-                    currentLang === "ar" 
-                        ? "عذرًا، حدث خطأ أثناء الاتصال بالمساعد الذكي. يمكنك المحاولة مجددًا أو التبديل للدعم البشري." 
-                        : "Sorry, an error occurred with the AI assistant. Try again or switch to human support.",
-                    "bot",
-                    "System"
-                );
-            }
-        } catch (err) {
-            console.error("AI Chat Error:", err);
-            removeTypingIndicator(typingId);
-            appendMessageHTML("Connection error.", "bot", "System");
-        }
+        // Emit AI message over WebSockets to save inside database and bridge to Discord ticket channel
+        socket.emit('ai_message', {
+            ticketId: threadId,
+            username: chatUsername,
+            userId: clientUserId,
+            message: text,
+            history: aiChatHistory
+        });
     }
 
     // --- HUMAN MODE LOGIC ---
