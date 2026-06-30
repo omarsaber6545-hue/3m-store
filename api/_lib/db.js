@@ -116,6 +116,31 @@ async function initSchema(p) {
       );
     `);
 
+    // Create support_tickets table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS support_tickets (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL,
+        discord_channel_id VARCHAR(255) UNIQUE,
+        status VARCHAR(50) DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create support_messages table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS support_messages (
+        id SERIAL PRIMARY KEY,
+        ticket_id VARCHAR(255) REFERENCES support_tickets(id) ON DELETE CASCADE,
+        sender_id VARCHAR(255),
+        sender_name VARCHAR(255),
+        content TEXT,
+        attachments JSONB DEFAULT '[]'::jsonb,
+        is_staff BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Seed default coupon
     const couponCheck = await client.query("SELECT * FROM coupons WHERE code = '3M20'");
     if (couponCheck.rows.length === 0) {

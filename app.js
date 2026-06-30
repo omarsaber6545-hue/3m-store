@@ -4033,6 +4033,97 @@ function setupLiveChatBot() {
         renderAIChat();
     }
 
+    let socket = null;
+    let pendingAttachment = null;
+
+    // Attach File Input Listener
+    const chatFileInput = document.getElementById("chat-file-input");
+    const chatPreviewContainer = document.getElementById("chat-upload-preview-container");
+    const chatPreviewImg = document.getElementById("chat-upload-preview");
+    const chatPreviewFilename = document.getElementById("chat-upload-filename");
+    const chatPreviewCancel = document.getElementById("chat-upload-cancel");
+
+    if (chatFileInput) {
+        chatFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith("image/")) {
+                showToast(currentLang === "ar" ? "يرجى إرفاق صور فقط" : "Please upload images only", "warning");
+                chatFileInput.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                pendingAttachment = {
+                    name: file.name,
+                    data: event.target.result
+                };
+                if (chatPreviewImg) chatPreviewImg.src = event.target.result;
+                if (chatPreviewFilename) chatPreviewFilename.innerText = file.name;
+                if (chatPreviewContainer) chatPreviewContainer.style.display = "flex";
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+
+    if (chatPreviewCancel) {
+        chatPreviewCancel.onclick = () => {
+            pendingAttachment = null;
+            if (chatFileInput) chatFileInput.value = "";
+            if (chatPreviewContainer) chatPreviewContainer.style.display = "none";
+        };
+    }
+
+    function initSocketConnection() {
+        if (socket) return;
+        
+        const socketUrl = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+            ? "http://localhost:3000"
+            : window.location.origin;
+            
+        socket = io(socketUrl);
+        
+        socket.on('connect', () => {
+            console.log("Connected to live support bridge socket");
+            if (threadId) {
+                socket.emit('join', { ticketId: threadId, username: chatUsername, userId: null });
+            }
+        });
+        
+        socket.on('history', (history) => {
+            chatMessages.innerHTML = "";
+            appendHumanInfoTip();
+            if (history && history.length > 0) {
+                history.forEach(msg => {
+                    renderedMessageIds.add(msg.id || `${msg.timestamp}-${msg.content}`);
+                    if (msg.is_staff) {
+                        appendMessageHTML(msg.content, "bot", msg.author, msg.avatar || null, msg.timestamp, msg.attachments);
+                    } else {
+                        appendMessageHTML(msg.content, "user", null, null, msg.timestamp, msg.attachments);
+                    }
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            isHistoryLoaded = true;
+        });
+        
+        socket.on('message', (msg) => {
+            const msgKey = msg.id || `${msg.timestamp}-${msg.content}`;
+            if (!renderedMessageIds.has(msgKey)) {
+                renderedMessageIds.add(msgKey);
+                if (msg.is_staff) {
+                    appendMessageHTML(msg.content, "bot", msg.author, msg.avatar || null, msg.timestamp, msg.attachments);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    if (!windowEl.classList.contains("active") && chatBadge) {
+                        chatBadge.style.display = "block";
+                    }
+                }
+            }
+        });
+    }
+
     function switchToHumanMode() {
         currentMode = "human";
         localStorage.setItem("support_chat_mode", "human");
@@ -4043,29 +4134,17 @@ function setupLiveChatBot() {
         humanBtn.innerHTML = `<span style="color:#3498db;">●</span> ${currentLang === "ar" ? "مساعد ذكي" : "AI Assistant"}`;
         humanBtn.title = currentLang === "ar" ? "العودة للمساعد الذكي" : "Switch to AI";
         
+        initSocketConnection();
+        
         if (threadId) {
-            loadChatHistory();
-            startPolling();
+            socket.emit('join', { ticketId: threadId, username: chatUsername, userId: null });
         } else {
             renderEmptyHumanChat();
         }
     }
 
-    function startPolling() {
-        stopPolling();
-        if (!threadId) return;
-        
-        chatPollInterval = setInterval(() => {
-            pollNewMessages();
-        }, 5000);
-    }
-
-    function stopPolling() {
-        if (chatPollInterval) {
-            clearInterval(chatPollInterval);
-            chatPollInterval = null;
-        }
-    }
+    function startPolling() {}
+    function stopPolling() {}
 
     // --- AI MODE LOGIC ---
     function renderAIChat() {
@@ -4079,14 +4158,12 @@ function setupLiveChatBot() {
     }
 
     async function sendAIChatMessage(text) {
-        // Render user message instantly
         appendMessageHTML(text, "user");
         const timestamp = new Date().toISOString();
         aiChatHistory.push({ sender: "user", text, timestamp });
         localStorage.setItem("support_ai_history", JSON.stringify(aiChatHistory));
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        // Add typing indicator
         const typingId = appendTypingIndicator();
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
@@ -4100,7 +4177,6 @@ function setupLiveChatBot() {
                 })
             });
             
-            // Remove typing indicator
             removeTypingIndicator(typingId);
             
             if (response.ok) {
@@ -4129,7 +4205,6 @@ function setupLiveChatBot() {
     function renderEmptyHumanChat() {
         chatMessages.innerHTML = "";
         
-        // System message telling them how to start
         const msg = document.createElement("div");
         msg.className = "system-message-chat";
         msg.style.cssText = "color:var(--text-muted); font-size:0.75rem; text-align:center; padding:15px; border:1px solid rgba(255,255,255,0.03); border-radius:8px; background:rgba(255,255,255,0.01); margin:10px;";
@@ -4141,121 +4216,39 @@ function setupLiveChatBot() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function loadChatHistory() {
-        chatMessages.innerHTML = `<div class="loading-messages" style="color:var(--text-muted); font-size:0.75rem; text-align:center; padding:10px;">جاري تحميل المحادثة...</div>`;
-        try {
-            const response = await fetch(`/api/discord-chat?threadId=${threadId}`);
-            if (!response.ok) throw new Error("Failed to load chat");
+    async function loadChatHistory() {}
+    async function pollNewMessages() {}
+
+    function sendHumanChatMessage(text) {
+        const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+        const clientUserId = loggedUser ? loggedUser.id : null;
+
+        if (!threadId) {
+            threadId = `TCK-${Math.floor(10000 + Math.random() * 90000)}`;
+            localStorage.setItem("support_chat_thread_id", threadId);
             
-            const data = await response.json();
-            chatMessages.innerHTML = ""; // Clear loader
-            
-            // Render information tip
-            appendHumanInfoTip();
-            
-            if (data.messages && data.messages.length > 0) {
-                data.messages.forEach(msg => {
-                    renderedMessageIds.add(msg.id);
-                    if (msg.isBot) {
-                        let userText = "";
-                        if (msg.content.includes("💬 **الرسالة الأولى**: ")) {
-                            userText = msg.content.split("💬 **الرسالة الأولى**: ")[1].split("\n")[0];
-                        } else if (msg.content.includes("**: ")) {
-                            userText = msg.content.split("**: ")[1];
-                        } else {
-                            userText = msg.content;
-                        }
-                        appendMessageHTML(userText, "user", null, null, msg.timestamp);
-                    } else {
-                        appendMessageHTML(msg.content, "bot", msg.author, msg.avatar, msg.timestamp);
-                    }
-                });
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-            isHistoryLoaded = true;
-        } catch (err) {
-            console.error("Error loading chat history:", err);
             chatMessages.innerHTML = "";
-            renderEmptyHumanChat();
+            appendHumanInfoTip();
+            initSocketConnection();
+            socket.emit('join', { ticketId: threadId, username: chatUsername, userId: clientUserId });
         }
-    }
-
-    async function pollNewMessages() {
-        if (!threadId) return;
-        try {
-            const response = await fetch(`/api/discord-chat?threadId=${threadId}`);
-            if (!response.ok) return;
-            const data = await response.json();
-            
-            let hasNew = false;
-            if (data.messages && data.messages.length > 0) {
-                data.messages.forEach(msg => {
-                    if (!renderedMessageIds.has(msg.id)) {
-                        renderedMessageIds.add(msg.id);
-                        if (!msg.isBot) {
-                            appendMessageHTML(msg.content, "bot", msg.author, msg.avatar, msg.timestamp);
-                            hasNew = true;
-                        }
-                    }
-                });
-                if (hasNew) {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                    if (!windowEl.classList.contains("active") && chatBadge) {
-                        chatBadge.style.display = "block";
-                    }
-                }
-            }
-        } catch (err) {
-            console.error("Error polling messages:", err);
-        }
-    }
-
-    async function sendHumanChatMessage(text) {
-        appendMessageHTML(text, "user");
+        
+        const localAttachments = pendingAttachment ? [pendingAttachment] : [];
+        appendMessageHTML(text, "user", null, null, new Date().toISOString(), localAttachments);
         chatInput.value = "";
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        try {
-            if (!threadId) {
-                // Remove the empty tip if any
-                chatMessages.innerHTML = "";
-                appendHumanInfoTip();
-                appendMessageHTML(text, "user"); // Redraw user message
-                
-                const response = await fetch("/api/discord-chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        action: "create",
-                        username: chatUsername,
-                        message: text
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    threadId = data.threadId;
-                    localStorage.setItem("support_chat_thread_id", threadId);
-                    isHistoryLoaded = true;
-                    startPolling();
-                } else {
-                    console.error("Failed to create support thread");
-                }
-            } else {
-                await fetch("/api/discord-chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        action: "send",
-                        threadId: threadId,
-                        username: chatUsername,
-                        message: text
-                    })
-                });
-            }
-        } catch (err) {
-            console.error("Error sending live support message:", err);
-        }
+        socket.emit('message', {
+            ticketId: threadId,
+            username: chatUsername,
+            userId: clientUserId,
+            message: text,
+            attachment: pendingAttachment
+        });
+
+        pendingAttachment = null;
+        if (chatFileInput) chatFileInput.value = "";
+        if (chatPreviewContainer) chatPreviewContainer.style.display = "none";
     }
 
     // --- GENERAL LOGIC ---
@@ -4320,7 +4313,7 @@ function setupLiveChatBot() {
         if (el) el.remove();
     }
 
-    function appendMessageHTML(text, sender, authorName = null, avatarUrl = null, timestampStr = null) {
+    function appendMessageHTML(text, sender, authorName = null, avatarUrl = null, timestampStr = null, attachments = []) {
         const msg = document.createElement("div");
         msg.className = `message ${sender}`;
         
@@ -4337,9 +4330,26 @@ function setupLiveChatBot() {
             `;
         }
         
+        let attachmentsHTML = "";
+        if (attachments && attachments.length > 0) {
+            attachments.forEach(att => {
+                const src = att.url || att.data;
+                if (src) {
+                    attachmentsHTML += `
+                        <div style="margin-top:6px;">
+                            <img src="${src}" style="max-width:100%; max-height:180px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); display:block; cursor:pointer;" onclick="window.open('${src}')">
+                        </div>
+                    `;
+                }
+            });
+        }
+        
         msg.innerHTML = `
             ${headerHTML}
-            <div class="message-content">${escapeHTML(text)}</div>
+            <div class="message-content">
+                ${escapeHTML(text)}
+                ${attachmentsHTML}
+            </div>
             <div class="message-time">${timeStr}</div>
         `;
         
