@@ -142,6 +142,7 @@ li {
 .loader-logo .accent-text {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -290,6 +291,7 @@ html[dir="ltr"] .section-title {
 .gradient-text {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -3772,6 +3774,7 @@ html[dir="ltr"] .manager-table {
     font-weight: 900;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .featured-coupon-card .coupon-desc {
@@ -3946,6 +3949,7 @@ html[dir="ltr"] .manager-table {
     font-weight: 900;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 6px;
 }
