@@ -284,6 +284,27 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Event: User creates a new ticket session before typing
+    socket.on('create_ticket', async ({ ticketId, username, userId }) => {
+        console.log(`[Ticket] User requested new support ticket #\${ticketId}`);
+        try {
+            const db = await getDb();
+            if (db) {
+                await getOrCreateTicketChannel(db, ticketId, username, userId);
+                
+                await db.query(
+                    "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, is_staff) VALUES ($1, 'system', 'System', 'Support session started.', true)",
+                    [ticketId]
+                );
+
+                socket.emit('ticket_created', { success: true, ticketId });
+            }
+        } catch (err) {
+            console.error("[Ticket] Failed to create ticket:", err.message);
+            socket.emit('ticket_created', { success: false, error: err.message });
+        }
+    });
+
     // Event: User chats with the AI Assistant
     socket.on('ai_message', async ({ ticketId, username, userId, message, history }) => {
         if (!ticketId || !username || !message) return;

@@ -4029,6 +4029,10 @@ function setupLiveChatBot() {
         localStorage.setItem("support_chat_mode", "ai");
         stopPolling();
         
+        // Show input area in AI mode
+        const chatInputArea = document.querySelector(".chat-input-area");
+        if (chatInputArea) chatInputArea.style.display = "flex";
+        
         // Update Header UI
         statusEl.innerText = currentLang === "ar" ? "مساعد ذكي نشط" : "AI Assistant Active";
         statusEl.style.color = "var(--primary-color)";
@@ -4125,7 +4129,7 @@ function setupLiveChatBot() {
                     if (currentMode === "ai") {
                         currentMode = "human";
                         localStorage.setItem("support_chat_mode", "human");
-                        statusEl.innerText = currentLang === "ar" ? "دعم بشري نشط" : "Human Support Active";
+                        statusEl.innerText = `${currentLang === "ar" ? "تذكرة" : "Ticket"}: ${threadId} | ${currentLang === "ar" ? "نشطة" : "Active"}`;
                         statusEl.style.color = "#2ecc71";
                         humanBtn.innerHTML = `<span style="color:#3498db;">●</span> ${currentLang === "ar" ? "مساعد ذكي" : "AI Assistant"}`;
                         humanBtn.title = currentLang === "ar" ? "العودة للمساعد الذكي" : "Switch to AI";
@@ -4135,6 +4139,9 @@ function setupLiveChatBot() {
                         appendHumanInfoTip();
                     }
                     
+                    const chatInputArea = document.querySelector(".chat-input-area");
+                    if (chatInputArea) chatInputArea.style.display = "flex";
+
                     appendMessageHTML(msg.content, "bot", msg.author, msg.avatar || null, msg.timestamp, msg.attachments);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                     if (!windowEl.classList.contains("active") && chatBadge) {
@@ -4157,6 +4164,38 @@ function setupLiveChatBot() {
             aiChatHistory.push({ sender: "bot", text: reply, timestamp: new Date().toISOString() });
             localStorage.setItem("support_ai_history", JSON.stringify(aiChatHistory));
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        socket.on('ticket_created', ({ success, ticketId, error }) => {
+            if (success) {
+                threadId = ticketId;
+                localStorage.setItem("support_chat_thread_id", ticketId);
+                
+                // Show input area
+                const chatInputArea = document.querySelector(".chat-input-area");
+                if (chatInputArea) chatInputArea.style.display = "flex";
+
+                // Update Header Status with Ticket ID & status
+                statusEl.innerText = `${currentLang === "ar" ? "تذكرة" : "Ticket"}: ${ticketId} | ${currentLang === "ar" ? "في انتظار الرد" : "Waiting for Staff"}`;
+                statusEl.style.color = "#ffae19";
+
+                chatMessages.innerHTML = "";
+                appendHumanInfoTip();
+                appendMessageHTML(
+                    currentLang === "ar" 
+                        ? "تم إنشاء تذكرة الدعم بنجاح! مشرفونا متصلون الآن وسيقومون بالرد عليك قريباً." 
+                        : "Support ticket created successfully! Our staff are online and will reply to you shortly.",
+                    "bot",
+                    "System"
+                );
+            } else {
+                showToast(currentLang === "ar" ? "فشل إنشاء التذكرة: " + error : "Failed to create ticket: " + error, "error");
+                const startBtn = document.getElementById("btn-start-support-session");
+                if (startBtn) {
+                    startBtn.disabled = false;
+                    startBtn.innerText = currentLang === "ar" ? "ابدأ محادثة جديدة" : "Start New Conversation";
+                }
+            }
         });
     }
 
@@ -4227,17 +4266,51 @@ function setupLiveChatBot() {
 
     // --- HUMAN MODE LOGIC ---
     function renderEmptyHumanChat() {
-        chatMessages.innerHTML = "";
+        const chatInputArea = document.querySelector(".chat-input-area");
+        if (chatInputArea) chatInputArea.style.display = "none";
         
-        const msg = document.createElement("div");
-        msg.className = "system-message-chat";
-        msg.style.cssText = "color:var(--text-muted); font-size:0.75rem; text-align:center; padding:15px; border:1px solid rgba(255,255,255,0.03); border-radius:8px; background:rgba(255,255,255,0.01); margin:10px;";
-        msg.innerHTML = currentLang === "ar"
-            ? "🔄 <strong>وضع الدعم البشري</strong><br>اكتب رسالتك بالأسفل لإنشاء تذكرة دعم مباشر في سيرفر الديسكورد وتوصيلك بمشرفي الاستوديو فوراً."
-            : "🔄 <strong>Human Support Mode</strong><br>Type your message below to open a live ticket in our Discord server and connect with our staff.";
-        
-        chatMessages.appendChild(msg);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        const chatPreviewContainer = document.getElementById("chat-upload-preview-container");
+        if (chatPreviewContainer) chatPreviewContainer.style.display = "none";
+
+        chatMessages.innerHTML = `
+            <div class="chat-start-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px 15px; height:100%; min-height:280px; justify-content:space-around;">
+                <div style="font-size:3.5rem; margin-bottom:10px; filter:drop-shadow(0 0 10px var(--primary-color));">💬</div>
+                <div>
+                    <h3 style="font-size:1.15rem; color:#fff; margin-bottom:8px; font-weight:bold;">
+                        ${currentLang === "ar" ? "الدعم الفني المباشر" : "Live Support"}
+                    </h3>
+                    <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.5; max-width:240px; margin:0 auto;">
+                        ${currentLang === "ar" ? "تحدث مع مشرفي استوديو 3M مباشرة لحل المشاكل والاستفسارات الفنية." : "Chat with 3M Studio representatives directly to resolve technical issues."}
+                    </p>
+                </div>
+                <button id="btn-start-support-session" style="background:linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color:white; border:none; padding:12px 28px; border-radius:30px; font-size:0.85rem; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(0,242,254,0.3); transition:all 0.3s;">
+                    ${currentLang === "ar" ? "ابدأ محادثة جديدة" : "Start New Conversation"}
+                </button>
+            </div>
+        `;
+
+        const startBtn = document.getElementById("btn-start-support-session");
+        if (startBtn) {
+            startBtn.onclick = () => {
+                startBtn.disabled = true;
+                startBtn.innerText = currentLang === "ar" ? "جاري إنشاء التذكرة..." : "Creating Ticket...";
+                
+                // Generate Ticket ID
+                threadId = `TCK-${Math.floor(10000 + Math.random() * 90000)}`;
+                
+                initSocketConnection();
+
+                const loggedUser = JSON.parse(localStorage.getItem("discord_user"));
+                const clientUserId = loggedUser ? loggedUser.id : null;
+
+                // Emit create_ticket event
+                socket.emit('create_ticket', {
+                    ticketId: threadId,
+                    username: chatUsername,
+                    userId: clientUserId
+                });
+            };
+        }
     }
 
     async function loadChatHistory() {}
