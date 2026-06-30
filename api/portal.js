@@ -220,20 +220,20 @@ export default async function handler(req, res) {
                 
                 if (row.type === 'order') {
                     icon = '🛒';
-                    text_ar = \`طلب شراء جديد لـ: \${row.detail}\`;
-                    text_en = \`New order placed for: \${row.detail}\`;
+                    text_ar = `طلب شراء جديد لـ: ${row.detail}`;
+                    text_en = `New order placed for: ${row.detail}`;
                 } else if (row.type === 'claim') {
                     icon = '🎁';
-                    text_ar = \`مطالبة بجائزة يومية: \${row.detail}\`;
-                    text_en = \`Daily reward claimed: \${row.detail}\`;
+                    text_ar = `مطالبة بجائزة يومية: ${row.detail}`;
+                    text_en = `Daily reward claimed: ${row.detail}`;
                 } else if (row.type === 'ticket') {
                     icon = '🎟️';
-                    text_ar = \`فتح تذكرة دعم جديدة: \${row.detail}\`;
-                    text_en = \`New support ticket opened: \${row.detail}\`;
+                    text_ar = `فتح تذكرة دعم جديدة: ${row.detail}`;
+                    text_en = `New support ticket opened: ${row.detail}`;
                 } else if (row.type === 'review') {
                     icon = '⭐';
-                    text_ar = \`تقييم جديد: \${row.detail}\`;
-                    text_en = \`New review submitted: \${row.detail}\`;
+                    text_ar = `تقييم جديد: ${row.detail}`;
+                    text_en = `New review submitted: ${row.detail}`;
                 }
                 
                 return { icon, ar: text_ar, en: text_en, timestamp: row.created_at };
