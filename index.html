@@ -4456,9 +4456,530 @@ html[dir="ltr"] .coupon-badge-on-card {
         padding: 100px 0 60px;
     }
 }
+
+/* ==========================================================================
+   ULTRA PREMIUM FEATURES STYLES
+   ========================================================================== */
+.particles-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+}
+
+.hero-video-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0.25;
+}
+
+.marketplace-portal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    display: flex;
+    background-color: var(--bg-dark);
+    font-family: var(--font-family), sans-serif;
+    color: var(--text-color);
+    overflow: hidden;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.portal-sidebar {
+    width: 280px;
+    height: 100%;
+    background: rgba(10, 10, 15, 0.6);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 30px 20px;
+    box-sizing: border-box;
+}
+
+.portal-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.sidebar-link:hover, .sidebar-link.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 3px 0 0 0 var(--primary-color);
+}
+
+.portal-viewport {
+    flex-grow: 1;
+    height: 100%;
+    overflow-y: auto;
+    padding: 40px;
+    box-sizing: border-box;
+    background: radial-gradient(circle at top right, rgba(127, 0, 255, 0.05), transparent 60%);
+}
+
+.portal-view {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.portal-view.active {
+    display: block;
+}
+
+.portal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.portal-grid-wide {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 992px) {
+    .portal-grid-wide {
+        grid-template-columns: 1fr;
+    }
+    .marketplace-portal {
+        flex-direction: column;
+    }
+    .portal-sidebar {
+        width: 100%;
+        height: auto;
+        border-left: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 15px;
+    }
+    .sidebar-menu {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+    .portal-viewport {
+        padding: 20px;
+    }
+}
+
+.portal-card {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s;
+}
+
+.portal-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.card-header h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-val {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+}
+
+.stat-lbl {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+}
+
+.trending-list, .discord-activity {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.trend-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.01);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.relative-map {
+    position: relative;
+    height: 300px;
+    overflow: hidden;
+    background: #050508;
+    border-radius: 12px;
+}
+
+.svg-map-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.map-marker {
+    fill: var(--primary-color);
+    animation: mapPulse 2s infinite;
+}
+
+@keyframes mapPulse {
+    0% {
+        r: 3px;
+        opacity: 1;
+    }
+    100% {
+        r: 12px;
+        opacity: 0;
+    }
+}
+
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.feed-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    font-size: 0.8rem;
+    animation: slideIn 0.3s ease-out;
+}
+
+.feed-icon {
+    font-size: 1.2rem;
+}
+
+.feed-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.feed-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.profile-summary {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .profile-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+.profile-xp-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.profile-user-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.user-avatar-glow {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+.xp-progress-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.xp-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.xp-bar-outer {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.xp-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 6px;
+    transition: width 0.5s ease-out;
+}
+
+.mystery-box-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.mystery-box-animation-area {
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 400px;
+}
+
+.mystery-box-3d {
+    font-size: 3.5rem;
+    cursor: pointer;
+    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: boxFloat 3s ease-in-out infinite;
+}
+
+.mystery-box-3d.shake {
+    animation: boxShake 0.5s infinite;
+}
+
+.mystery-box-3d.open {
+    transform: scale(1.3) rotateY(180deg);
+}
+
+@keyframes boxFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes boxShake {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-3px, 2px) rotate(-3deg); }
+    40% { transform: translate(3px, -1px) rotate(3deg); }
+    60% { transform: translate(-2px, -2px) rotate(-1deg); }
+    80% { transform: translate(2px, 1px) rotate(2deg); }
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.achievement-card {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    opacity: 0.4;
+    transition: all 0.3s;
+}
+
+.achievement-card.unlocked {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 15px rgba(0, 242, 254, 0.05);
+}
+
+.achievement-icon {
+    font-size: 2rem;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.achievement-details h4 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.achievement-details p {
+    margin: 4px 0 0 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.theme-customizer-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.customizer-group {
+    margin-bottom: 24px;
+}
+
+.customizer-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.color-options {
+    display: flex;
+    gap: 12px;
+}
+
+.color-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+}
+
+.color-btn.selected {
+    border-color: #fff;
+    transform: scale(1.1);
+}
+
+.theme-select {
+    width: 100%;
+    background: #0c0c12;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #fff;
+    font-family: inherit;
+}
+
+.theme-slider {
+    width: 100%;
+    accent-color: var(--primary-color);
+}
+
+.security-logs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.log-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.log-status {
+    color: #2ecc71;
+}
+
+.log-status.alert {
+    color: #e74c3c;
+}
 </style>
 </head>
 <body>
+    <canvas id="particles-canvas" class="particles-canvas"></canvas>
+
 
     <!-- Featured Coupon Announcement Bar -->
     <div id="featured-coupon-banner" class="featured-coupon-banner" style="display: none;">
@@ -4553,6 +5074,11 @@ html[dir="ltr"] .coupon-badge-on-card {
             </nav>
 
             <div class="header-actions">
+                <!-- Portal Switcher -->
+                <button class="btn btn-primary btn-sm btn-glow" id="btn-portal-toggle" style="margin-left: 10px; display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem;">
+                    <span>🎮 بوابة المنصة</span>
+                </button>
+
                 <!-- Language Switcher -->
                 <div class="lang-switcher-container">
                     <button class="lang-toggle-btn" id="lang-toggle-btn">
@@ -4623,6 +5149,9 @@ html[dir="ltr"] .coupon-badge-on-card {
         <!-- HERO SECTION -->
         <section id="hero" class="homepage-section hero-section">
             <div class="hero-bg-animations">
+                <video autoplay loop muted playsinline class="hero-video-bg" id="hero-video-bg">
+                    <source src="assets/videos/hero-bg.mp4" type="video/mp4">
+                </video>
                 <div class="grid-overlay"></div>
                 <div class="glow-orb orb-1"></div>
                 <div class="glow-orb orb-2"></div>
@@ -4925,6 +5454,282 @@ html[dir="ltr"] .coupon-badge-on-card {
 
     </main>
 
+    
+    <!-- Marketplace & Gaming Portal Workspace -->
+    <div id="marketplace-portal" class="marketplace-portal" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="portal-sidebar">
+            <div class="sidebar-header">
+                <span class="portal-logo">3M PORTAL</span>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#" class="sidebar-link active" data-view="hub">
+                    <span class="sidebar-link-icon">🏠</span>
+                    <span>الرئيسية للمنصة</span>
+                </a>
+                <a href="#" class="sidebar-link" data-view="kiosk">
+                    <span class="sidebar-link-icon">🛒</span>
+                    <span>متجر الخدمات</span>
+                </a>
+                <a href="#" class="sidebar-link" data-view="achievements">
+                    <span class="sidebar-link-icon">🏆</span>
+                    <span>الإنجازات والـ XP</span>
+                </a>
+                <a href="#" class="sidebar-link" data-view="theme">
+                    <span class="sidebar-link-icon">🎨</span>
+                    <span>تخصيص المظهر</span>
+                </a>
+                <a href="#" class="sidebar-link" data-view="media">
+                    <span class="sidebar-link-icon">📚</span>
+                    <span>المدونة والتعليم</span>
+                </a>
+                <a href="#" class="sidebar-link" data-view="admin-panel" id="sidebar-admin-link" style="display: none;">
+                    <span class="sidebar-link-icon">📈</span>
+                    <span>لوحة تحكم المشرف</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-outline btn-block btn-sm" id="btn-exit-portal">🏠 العودة للموقع</button>
+            </div>
+        </aside>
+
+        <!-- Main Viewport -->
+        <main class="portal-viewport">
+            <!-- PORTAL HUB VIEW -->
+            <section class="portal-view active" id="view-hub">
+                <!-- Roblox Live Hub & Discord Live Integration -->
+                <div class="portal-grid">
+                    <!-- Roblox Hub Card -->
+                    <div class="portal-card">
+                        <div class="card-header">
+                            <h3>🎮 مركز إحصائيات روبلوكس الحي</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <span class="stat-val" id="rbx-active-players">1,402</span>
+                                    <span class="stat-lbl">اللاعبين النشطين</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-val" id="rbx-total-visits">34.2M</span>
+                                    <span class="stat-lbl">إجمالي الزيارات</span>
+                                </div>
+                            </div>
+                            <div class="trending-list">
+                                <h4>🔥 الألعاب الرائجة للاستوديو:</h4>
+                                <div class="trend-item">
+                                    <span>Simulator Legends</span>
+                                    <span class="badge badge-success">● 920 نشط</span>
+                                </div>
+                                <div class="trend-item">
+                                    <span>Aero World Obby</span>
+                                    <span class="badge badge-success">● 482 نشط</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discord Live Integration -->
+                    <div class="portal-card">
+                        <div class="card-header">
+                            <h3>🤖 تكامل ديسكورد المباشر</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <span class="stat-val" id="dc-member-count">2,854</span>
+                                    <span class="stat-lbl">إجمالي الأعضاء</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-val" id="dc-online-staff">5</span>
+                                    <span class="stat-lbl">المشرفين النشطين</span>
+                                </div>
+                            </div>
+                            <div class="discord-activity">
+                                <h4>📢 إعلانات السيرفر الأخيرة:</h4>
+                                <p class="activity-text" id="dc-announcement">شروحات جديدة تمت إضافتها للمدونة اليوم!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive World Map & Live Activity Feed -->
+                <div class="portal-grid-wide">
+                    <!-- Interactive World Map -->
+                    <div class="portal-card map-card">
+                        <div class="card-header">
+                            <h3>🌍 خريطة المشاريع والعملاء حول العالم</h3>
+                        </div>
+                        <div class="card-body relative-map">
+                            <!-- SVG World Map with pulsing nodes -->
+                            <div class="svg-map-wrapper" id="world-map-svg">
+                                <svg viewBox="0 0 1000 500" width="100%" height="100%" style="background:#050508; fill: #10101b;">
+                                    <!-- Simplified world map path coordinates -->
+                                    <path d="M150,150 L200,120 L250,130 L300,110 L350,120 L400,100 L450,140 L500,110 L550,130 L600,120 L650,150 L700,110 L750,130 L800,110 L850,140 L900,120 L950,150 L950,350 L800,400 L750,420 L700,380 L650,400 L600,370 L550,390 L500,380 L450,410 L400,390 L350,420 L300,380 L250,400 L200,370 L150,400 Z" style="opacity: 0.15; fill: #202035; stroke: rgba(255,255,255,0.03); stroke-width: 1;"/>
+                                    <!-- Pulsing map points representing completed project hotspots -->
+                                    <circle cx="280" cy="180" r="5" class="map-marker"/>
+                                    <circle cx="480" cy="220" r="5" class="map-marker"/>
+                                    <circle cx="580" cy="240" r="5" class="map-marker"/>
+                                    <circle cx="680" cy="190" r="5" class="map-marker"/>
+                                    <circle cx="780" cy="260" r="5" class="map-marker"/>
+                                    <!-- Place name tags -->
+                                    <text x="295" y="185" fill="var(--text-muted)" font-size="10">USA</text>
+                                    <text x="495" y="225" fill="var(--text-muted)" font-size="10">Egypt</text>
+                                    <text x="595" y="245" fill="var(--text-muted)" font-size="10">Saudi Arabia</text>
+                                    <text x="695" y="195" fill="var(--text-muted)" font-size="10">Germany</text>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Activity Feed -->
+                    <div class="portal-card feed-card">
+                        <div class="card-header">
+                            <h3>⚡ سجل النشاطات المباشر</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-feed" id="live-activity-feed">
+                                <!-- Dynamic live activity logs will go here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STORE KIOSK VIEW -->
+            <section class="portal-view" id="view-kiosk">
+                <div class="kiosk-header" style="margin-bottom: 24px;">
+                    <h2>🛒 متجر الخدمات المطور</h2>
+                    <p>استخدم محرك البحث والتصفية المطور للعثور على الخدمة البرمجية المناسبة.</p>
+                </div>
+                <div id="kiosk-cats-container" style="display:flex; gap:10px; margin-bottom:20px; overflow-x:auto; padding-bottom:8px;">
+                    <!-- Categories filter toggles loaded by js -->
+                </div>
+                <div class="kiosk-grid portal-grid" id="kiosk-grid">
+                    <!-- Dynamic services loaded by js -->
+                </div>
+            </section>
+
+            <!-- ACHIEVEMENTS & REWARDS VIEW -->
+            <section class="portal-view" id="view-achievements">
+                <div class="profile-summary">
+                    <div class="profile-xp-card">
+                        <div class="profile-user-info">
+                            <img src="assets/images/default-avatar.png" id="portal-user-avatar" class="user-avatar-glow" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            <div>
+                                <h3 id="portal-user-name">Gamer</h3>
+                                <span class="badge badge-primary" id="portal-user-rank" style="border: 1px solid var(--primary-color);">مبتدئ / Bronze</span>
+                            </div>
+                        </div>
+                        <div class="xp-progress-bar-wrapper">
+                            <div class="xp-stats">
+                                <span id="user-xp-display">XP: 240 / 500</span>
+                                <span id="user-level-display">المستوى: 3</span>
+                            </div>
+                            <div class="xp-bar-outer">
+                                <div class="xp-bar-inner" id="user-xp-bar" style="width: 48%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mystery Box card -->
+                    <div class="mystery-box-card">
+                        <h3>🎁 صندوق الحظ اليومي</h3>
+                        <p>افتح الصندوق اليومي واحصل على نقاط خبرة أو كوبونات خصم مجانية!</p>
+                        <div class="mystery-box-animation-area">
+                            <div class="mystery-box-3d" id="mystery-box-3d" title="اضغط لفتح الصندوق!">🎁</div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-open-mystery-box">افتح الصندوق اليومي</button>
+                    </div>
+                </div>
+
+                <div class="achievements-section">
+                    <h3>🏆 الإنجازات المفتوحة</h3>
+                    <div class="achievements-grid" id="achievements-grid">
+                        <!-- Dynamic list of achievements -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- THEME CUSTOMIZER VIEW -->
+            <section class="portal-view" id="view-theme">
+                <div class="theme-customizer-card">
+                    <h2>🎨 لوحة تخصيص المظهر وتصميم الواجهة</h2>
+                    <p>اختر الألوان والخطوط ومستويات النيون التي تفضلها لتجربة لعب شخصية مميزة.</p>
+                    
+                    <div class="customizer-group">
+                        <label>اللون النيوني الرئيسي (Primary Neon Color):</label>
+                        <div class="color-options">
+                            <button class="color-btn" style="background:#00f2fe;" data-color="#00f2fe"></button>
+                            <button class="color-btn" style="background:#ff007f;" data-color="#ff007f"></button>
+                            <button class="color-btn" style="background:#39ff14;" data-color="#39ff14"></button>
+                            <button class="color-btn" style="background:#ffae19;" data-color="#ffae19"></button>
+                            <button class="color-btn" style="background:#9d4edd;" data-color="#9d4edd"></button>
+                        </div>
+                    </div>
+
+                    <div class="customizer-group">
+                        <label>نوع الخط (Font Family Selection):</label>
+                        <select id="theme-font-select" class="theme-select">
+                            <option value="Cairo">Cairo (خط عربي حديث)</option>
+                            <option value="Outfit">Outfit (خط إنجليزي أنيق)</option>
+                            <option value="system-ui">خط النظام الافتراضي</option>
+                        </select>
+                    </div>
+
+                    <div class="customizer-group">
+                        <label>قوة توهج النيون (Glow Filter Intensity):</label>
+                        <input type="range" id="theme-glow-slider" min="0" max="20" value="10" class="theme-slider">
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-save-custom-theme">حفظ المظهر وتطبيقه</button>
+                </div>
+            </section>
+
+            <!-- MEDIA & TUTORIALS VIEW -->
+            <section class="portal-view" id="view-media">
+                <h2 style="margin-bottom:12px;">📚 المدونة ومركز الشروحات والتحديثات</h2>
+                <p style="color:var(--text-muted); margin-bottom:24px;">شروحات برمجية روبلوكس وديسكورد وتحديثات أعمالنا.</p>
+                <div class="blog-grid portal-grid" id="portal-blog-grid">
+                    <!-- Dynamic blog cards loaded by js -->
+                </div>
+            </section>
+
+            <!-- ADMIN/SELLER DASHBOARD VIEW -->
+            <section class="portal-view" id="view-admin-panel">
+                <div class="admin-dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                    <h2>📈 لوحة تحليلات وإحصائيات الأدمن</h2>
+                    <span class="badge badge-admin">إدارة حية للمنصة</span>
+                </div>
+                
+                <div class="portal-grid">
+                    <!-- Sales Analytics Card -->
+                    <div class="portal-card">
+                        <div class="card-header">
+                            <h3>💰 إجمالي الأرباح والمبيعات</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" id="admin-svg-chart">
+                                <!-- Dynamic SVG Line Chart loaded by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Center Card -->
+                    <div class="portal-card">
+                        <div class="card-header">
+                            <h3>🛡️ مركز الأمان وسجلات الأنشطة</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="security-logs" id="admin-security-logs">
+                                <!-- Security log items loaded by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
     <!-- FOOTER -->
     <footer class="main-footer">
         <div class="container footer-container">
@@ -10528,6 +11333,554 @@ window.addEventListener('unhandledrejection', function(event) {
         { name: "تفاصيل الخطأ (Stack)", value: stack.substring(0, 1000), inline: false }
     ]);
 });
+
+// ==========================================================================
+// ULTRA PREMIUM CORE INTEGRATION LOGIC
+// ==========================================================================
+
+// --- SPA Portal View Router ---
+const btnPortalToggle = document.getElementById("btn-portal-toggle");
+const btnExitPortal = document.getElementById("btn-exit-portal");
+const sectionsContainer = document.getElementById("sections-container");
+const mainHeader = document.getElementById("main-header");
+const marketplacePortal = document.getElementById("marketplace-portal");
+const sidebarLinks = document.querySelectorAll(".sidebar-link");
+const portalViews = document.querySelectorAll(".portal-view");
+
+if (btnPortalToggle && marketplacePortal) {
+    btnPortalToggle.onclick = () => {
+        // Log entry to security center
+        addSecurityLog("Portal Access", "Authorized", "Browser Session opened workspace");
+        
+        // Hide Homepage, Show Portal
+        if (sectionsContainer) sectionsContainer.style.display = "none";
+        if (mainHeader) mainHeader.style.display = "none";
+        marketplacePortal.style.display = "flex";
+        
+        // Auto load dynamic portal sections
+        initPortalServices();
+        initAchievements();
+        renderPortalBlog();
+        renderSvgChart();
+        initParticlesBg();
+    };
+}
+
+if (btnExitPortal && marketplacePortal) {
+    btnExitPortal.onclick = () => {
+        if (sectionsContainer) sectionsContainer.style.display = "block";
+        if (mainHeader) mainHeader.style.display = "block";
+        marketplacePortal.style.display = "none";
+    };
+}
+
+// Sidebar links toggle
+sidebarLinks.forEach(link => {
+    link.onclick = (e) => {
+        e.preventDefault();
+        const viewName = link.getAttribute("data-view");
+        
+        sidebarLinks.forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+        
+        portalViews.forEach(view => {
+            if (view.id === `view-${viewName}`) {
+                view.classList.add("active");
+            } else {
+                view.classList.remove("active");
+            }
+        });
+    };
+});
+
+// Show admin link in sidebar if adminMode is active
+setInterval(() => {
+    const adminLink = document.getElementById("sidebar-admin-link");
+    if (adminLink) {
+        adminLink.style.display = adminMode ? "flex" : "none";
+    }
+}, 1000);
+
+// --- Live Fluctuating Counter Stats (Roblox & Discord) ---
+let rbxActive = 1402;
+let dcOnline = 5;
+
+setInterval(() => {
+    rbxActive += Math.floor(Math.random() * 21) - 10;
+    const rbxEl = document.getElementById("rbx-active-players");
+    if (rbxEl) rbxEl.innerText = rbxActive.toLocaleString();
+    
+    dcOnline += Math.floor(Math.random() * 3) - 1;
+    if (dcOnline < 2) dcOnline = 2;
+    const dcStaffEl = document.getElementById("dc-online-staff");
+    if (dcStaffEl) dcStaffEl.innerText = dcOnline;
+}, 5000);
+
+// --- Live Activity Feed Simulator ---
+const simulatedActivities = [
+    { icon: "🛒", ar: "طلب شراء جديد لخدمة ديسكورد بوت من مصر!", en: "New Discord Bot order placed from Egypt!" },
+    { icon: "🏆", ar: "تم ترقية عميل إلى رتبة VIP Gold!", en: "A customer was promoted to VIP Gold rank!" },
+    { icon: "🎁", ar: "عميل فتح صندوق الحظ وربح 100 XP!", en: "A customer opened the Mystery Box and won 100 XP!" },
+    { icon: "🚀", ar: "تم تسليم مشروع خريطة روبلوكس لعميل في السعودية!", en: "Roblox map project delivered to a client in Saudi Arabia!" },
+    { icon: "⭐", ar: "تقييم جديد بـ 5 نجوم لخدمة تطوير الويب!", en: "New 5-star review left for Web Development service!" }
+];
+
+const feedContainer = document.getElementById("live-activity-feed");
+function addActivityFeedItem(item) {
+    if (!feedContainer) return;
+    const div = document.createElement("div");
+    div.className = "feed-item";
+    const text = currentLang === "ar" ? item.ar : item.en;
+    div.innerHTML = `
+        <span class="feed-icon">${item.icon}</span>
+        <div class="feed-details">
+            <span>${text}</span>
+            <span class="feed-time">الآن / Just Now</span>
+        </div>
+    `;
+    feedContainer.prepend(div);
+    
+    // Cap items at 8
+    if (feedContainer.children.length > 8) {
+        feedContainer.removeChild(feedContainer.lastChild);
+    }
+}
+
+// Load initial items
+simulatedActivities.forEach(act => addActivityFeedItem(act));
+// Push new items occasionally
+setInterval(() => {
+    const randomAct = simulatedActivities[Math.floor(Math.random() * simulatedActivities.length)];
+    addActivityFeedItem(randomAct);
+    showToast(currentLang === "ar" ? randomAct.ar : randomAct.en, "info");
+}, 15000);
+
+// --- User Profile, XP Engine & Mystery Box ---
+let userXP = parseInt(localStorage.getItem("3m_user_xp")) || 240;
+let userLevel = parseInt(localStorage.getItem("3m_user_level")) || 3;
+let lastMysteryBoxOpen = localStorage.getItem("3m_mystery_box_last") || "";
+
+function initAchievements() {
+    const xpDisplay = document.getElementById("user-xp-display");
+    const lvlDisplay = document.getElementById("user-level-display");
+    const xpBar = document.getElementById("user-xp-bar");
+    const rankDisplay = document.getElementById("portal-user-rank");
+    
+    if (xpDisplay) xpDisplay.innerText = `XP: ${userXP} / ${userLevel * 200}`;
+    if (lvlDisplay) lvlDisplay.innerText = `${currentLang === "ar" ? "المستوى" : "Level"}: ${userLevel}`;
+    if (xpBar) xpBar.style.width = `${(userXP / (userLevel * 200)) * 100}%`;
+    
+    if (rankDisplay) {
+        if (userLevel >= 10) {
+            rankDisplay.innerText = currentLang === "ar" ? "أسطوري / VIP Diamond" : "VIP Diamond";
+            rankDisplay.style.borderColor = "#9d4edd";
+        } else if (userLevel >= 6) {
+            rankDisplay.innerText = currentLang === "ar" ? "محترف / VIP Gold" : "VIP Gold";
+            rankDisplay.style.borderColor = "#ffae19";
+        } else {
+            rankDisplay.innerText = currentLang === "ar" ? "مبتدئ / Bronze" : "Bronze";
+            rankDisplay.style.borderColor = "#00f2fe";
+        }
+    }
+    
+    renderAchievementsList();
+}
+
+const achievementsList = [
+    { id: "ach-1", icon: "🎟️", ar: "كود الخصم الأول", en: "First Coupon Used", desc_ar: "قم بتطبيق كود خصم في صفحة الدفع.", desc_en: "Apply any coupon at checkout.", unlocked: false },
+    { id: "ach-2", icon: "🎁", ar: "محب الحظ", en: "Box Opener", desc_ar: "افتح صندوق الحظ اليومي لأول مرة.", desc_en: "Open the daily mystery box for the first time.", unlocked: false },
+    { id: "ach-3", icon: "🎮", ar: "مطور روبلوكس", en: "Roblox Fanatic", desc_ar: "تصفح خدمات روبلوكس في المتجر.", desc_en: "Browse Roblox services in the store.", unlocked: true },
+    { id: "ach-4", icon: "🛡️", ar: "أمان الحساب", en: "Secure Access", desc_ar: "قم بزيارة مركز الحماية والأمان.", desc_en: "Visit the account security center.", unlocked: true }
+];
+
+function renderAchievementsList() {
+    const container = document.getElementById("achievements-grid");
+    if (!container) return;
+    container.innerHTML = "";
+    achievementsList.forEach(ach => {
+        const isUnlocked = ach.unlocked || (ach.id === "ach-2" && lastMysteryBoxOpen !== "");
+        const card = document.createElement("div");
+        card.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
+        card.innerHTML = `
+            <span class="achievement-icon">${ach.icon}</span>
+            <div class="achievement-details">
+                <h4>${currentLang === "ar" ? ach.ar : ach.en}</h4>
+                <p>${currentLang === "ar" ? ach.desc_ar : ach.desc_en}</p>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Mystery Box opening mechanism
+const box3d = document.getElementById("mystery-box-3d");
+const btnOpenBox = document.getElementById("btn-open-mystery-box");
+
+if (box3d && btnOpenBox) {
+    btnOpenBox.onclick = openMysteryBox;
+    box3d.onclick = openMysteryBox;
+}
+
+function openMysteryBox() {
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (lastMysteryBoxOpen === todayStr) {
+        showToast(currentLang === "ar" ? "لقد قمت بفتح صندوق الحظ اليوم بالفعل. عد غداً!" : "You have already opened the box today. Come back tomorrow!", "warning");
+        return;
+    }
+    
+    // Trigger animation
+    box3d.classList.add("shake");
+    btnOpenBox.disabled = true;
+    
+    setTimeout(() => {
+        box3d.classList.remove("shake");
+        box3d.classList.add("open");
+        
+        // Generate Reward
+        const rewards = [
+            { xp: 120, label: "120 XP" },
+            { xp: 250, label: "250 XP" },
+            { coupon: "SUMMER20", label: "كوبون خصم 20%" },
+            { xp: 50, label: "50 XP" }
+        ];
+        const win = rewards[Math.floor(Math.random() * rewards.length)];
+        
+        setTimeout(() => {
+            if (win.xp) {
+                userXP += win.xp;
+                const maxXp = userLevel * 200;
+                if (userXP >= maxXp) {
+                    userXP -= maxXp;
+                    userLevel += 1;
+                    showToast(currentLang === "ar" ? "🎉 تهانينا! تمت ترقيتك لمستوى جديد!" : "🎉 Congratulations! Level Up!", "success");
+                }
+                localStorage.setItem("3m_user_xp", userXP);
+                localStorage.setItem("3m_user_level", userLevel);
+                showToast(currentLang === "ar" ? `🎁 ربحت ${win.label}!` : `🎁 You won ${win.label}!`, "success");
+            } else if (win.coupon) {
+                showToast(currentLang === "ar" ? `🎁 ربحت كود الخصم ${win.coupon}!` : `🎁 You won coupon code ${win.coupon}!`, "success");
+            }
+            
+            lastMysteryBoxOpen = todayStr;
+            localStorage.setItem("3m_mystery_box_last", lastMysteryBoxOpen);
+            
+            initAchievements();
+            
+            setTimeout(() => {
+                box3d.classList.remove("open");
+                btnOpenBox.disabled = false;
+            }, 2000);
+            
+        }, 600);
+        
+    }, 1200);
+}
+
+// --- Theme Customizer Loader & Saved State Handler ---
+const themeFontSelect = document.getElementById("theme-font-select");
+const themeGlowSlider = document.getElementById("theme-glow-slider");
+const btnSaveTheme = document.getElementById("btn-save-custom-theme");
+
+if (btnSaveTheme) {
+    btnSaveTheme.onclick = () => {
+        const font = themeFontSelect ? themeFontSelect.value : "Cairo";
+        const glow = themeGlowSlider ? themeGlowSlider.value : "10";
+        
+        localStorage.setItem("3m_custom_font", font);
+        localStorage.setItem("3m_custom_glow", glow);
+        
+        applyCustomThemeStyles(font, glow);
+        showToast(currentLang === "ar" ? "تم حفظ المظهر وتطبيقه بنجاح!" : "Theme customized successfully!", "success");
+    };
+}
+
+// Apply selected colors from color buttons
+document.querySelectorAll(".color-btn").forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll(".color-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        const color = btn.getAttribute("data-color");
+        localStorage.setItem("3m_custom_color", color);
+        document.documentElement.style.setProperty("--primary-color", color);
+    };
+});
+
+function applyCustomThemeStyles(font, glow) {
+    document.documentElement.style.setProperty("--font-family", font);
+    const shadowIntensity = parseFloat(glow) / 10.0;
+    document.documentElement.style.setProperty("--glow-intensity", shadowIntensity);
+}
+
+// On load, restore custom theme parameters
+(function loadCustomTheme() {
+    const savedColor = localStorage.getItem("3m_custom_color");
+    const savedFont = localStorage.getItem("3m_custom_font") || "Cairo";
+    const savedGlow = localStorage.getItem("3m_custom_glow") || "10";
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty("--primary-color", savedColor);
+        const activeColorBtn = document.querySelector(`.color-btn[data-color="${savedColor}"]`);
+        if (activeColorBtn) activeColorBtn.classList.add("selected");
+    }
+    
+    if (themeFontSelect) themeFontSelect.value = savedFont;
+    if (themeGlowSlider) themeGlowSlider.value = savedGlow;
+    applyCustomThemeStyles(savedFont, savedGlow);
+})();
+
+// --- Dynamic Kiosk Store catalog ---
+function initPortalServices() {
+    const grid = document.getElementById("kiosk-grid");
+    const catsContainer = document.getElementById("kiosk-cats-container");
+    if (!grid) return;
+    
+    const services = (adminMode ? draftState[currentLang] : liveState[currentLang]).services || [];
+    
+    // Render Category filters
+    if (catsContainer) {
+        catsContainer.innerHTML = "";
+        const categories = ["all", "roblox", "discord", "web", "graphic"];
+        const categoryLabels = {
+            all: currentLang === "ar" ? "الكل" : "All",
+            roblox: currentLang === "ar" ? "روبلوكس" : "Roblox",
+            discord: currentLang === "ar" ? "ديسكورد" : "Discord",
+            web: currentLang === "ar" ? "تطوير الويب" : "Web Dev",
+            graphic: currentLang === "ar" ? "تصميم جرافيك" : "Graphics"
+        };
+        
+        categories.forEach(cat => {
+            const btn = document.createElement("button");
+            btn.className = `btn btn-sm \${cat === 'all' ? 'btn-primary' : 'btn-secondary'}`;
+            btn.innerText = categoryLabels[cat] || cat;
+            btn.onclick = () => {
+                catsContainer.querySelectorAll("button").forEach(b => {
+                    b.classList.remove("btn-primary");
+                    b.classList.add("btn-secondary");
+                });
+                btn.classList.remove("btn-secondary");
+                btn.classList.add("btn-primary");
+                filterPortalServices(cat);
+            };
+            catsContainer.appendChild(btn);
+        });
+    }
+    
+    renderKioskGrid(services);
+}
+
+function renderKioskGrid(services) {
+    const grid = document.getElementById("kiosk-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    
+    services.forEach(srv => {
+        const card = document.createElement("div");
+        card.className = "portal-card service-card";
+        card.innerHTML = `
+            <div class="card-header">
+                <h3>🎮 \${srv.title}</h3>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.8rem; color:var(--text-muted); line-height:1.5; margin-bottom:15px; height:60px; overflow:hidden;">\${srv.description}</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.03); padding-top:12px;">
+                    <span style="font-weight:bold; color:var(--primary-color);">\${getFormattedPrice(srv.priceBase)}</span>
+                    <button class="btn btn-primary btn-sm btn-glow" onclick="openPurchaseModal('\${srv.id}')">شراء / Buy</button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function filterPortalServices(cat) {
+    const services = (adminMode ? draftState[currentLang] : liveState[currentLang]).services || [];
+    if (cat === "all") {
+        renderKioskGrid(services);
+    } else {
+        const filtered = services.filter(x => x.category === cat || x.id.includes(cat));
+        renderKioskGrid(filtered);
+    }
+}
+
+// Search bar inside Store Kiosk
+const kioskSearch = document.getElementById("kiosk-search");
+if (kioskSearch) {
+    kioskSearch.oninput = () => {
+        const q = kioskSearch.value.trim().toLowerCase();
+        const services = (adminMode ? draftState[currentLang] : liveState[currentLang]).services || [];
+        const filtered = services.filter(x => x.title.toLowerCase().includes(q) || x.description.toLowerCase().includes(q));
+        renderKioskGrid(filtered);
+    };
+}
+
+// --- Media & Tutorials Blog list ---
+const blogArticles = [
+    { id: "blog-1", icon: "🎮", ar: "كيف تبرمج لعبة روبلوكس احترافية من الصفر", en: "How to Script a Roblox Game from Scratch", date: "2026-06-25", desc_ar: "دليل كامل للمبتدئين لتعلم محرك Roblox Studio واستخدام لغة Luau.", desc_en: "Learn Luau programming and workspace fundamentals inside Roblox Studio." },
+    { id: "blog-2", icon: "🤖", ar: "تأمين سيرفرات ديسكورد ضد الهجمات والثغرات", en: "Securing Discord Servers from Spam Bots", date: "2026-06-22", desc_ar: "أفضل إعدادات الأمان والبوتات المخصصة للحفاظ على مجتمعك آمناً.", desc_en: "Best security settings, permissions, and bots to prevent server raids." },
+    { id: "blog-3", icon: "🌐", ar: "أسرار زيادة سرعة تحميل مواقع الويب للألعاب", en: "Speed Optimization for Gaming Portals", date: "2026-06-18", desc_ar: "نصائح تقنية لتحسين الاستجابة السريعة وتقليل أوقات تحميل الواجهة.", desc_en: "Proven tech tips to reduce bundle size and achieve fast load speeds." }
+];
+
+function renderPortalBlog() {
+    const grid = document.getElementById("portal-blog-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    blogArticles.forEach(art => {
+        const card = document.createElement("div");
+        card.className = "portal-card";
+        card.innerHTML = `
+            <div class="card-header">
+                <h3>\${art.icon} \${currentLang === "ar" ? art.ar : art.en}</h3>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.8rem; color:var(--text-muted); line-height:1.5; margin-bottom:15px;">\${currentLang === "ar" ? art.desc_ar : art.desc_en}</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--text-muted);">
+                    <span>📅 \${art.date}</span>
+                    <a href="#" class="btn btn-secondary btn-sm" onclick="event.preventDefault(); showToast('قريباً / Coming Soon', 'info');">اقرأ / Read</a>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// --- Interactive SVG Line Chart (Admin Panel) ---
+function renderSvgChart() {
+    const chartContainer = document.getElementById("admin-svg-chart");
+    if (!chartContainer) return;
+    
+    chartContainer.innerHTML = `
+        <svg viewBox="0 0 500 200" width="100%" height="100%" style="overflow:visible;">
+            <defs>
+                <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0.0"/>
+                </linearGradient>
+            </defs>
+            <line x1="50" y1="20" x2="450" y2="20" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="50" y1="70" x2="450" y2="70" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="50" y1="120" x2="450" y2="120" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="50" y1="170" x2="450" y2="170" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            
+            <path d="M50,170 L50,140 L130,90 L210,130 L290,60 L370,100 L450,30 L450,170 Z" fill="url(#chartGlow)"/>
+            
+            <path d="M50,140 L130,90 L210,130 L290,60 L370,100 L450,30" fill="none" stroke="var(--primary-color)" stroke-width="3" style="filter: drop-shadow(0 0 6px var(--primary-color));"/>
+            
+            <circle cx="50" cy="140" r="4" fill="#fff"/>
+            <circle cx="130" cy="90" r="4" fill="#fff"/>
+            <circle cx="210" cy="130" r="4" fill="#fff"/>
+            <circle cx="290" cy="60" r="4" fill="#fff"/>
+            <circle cx="370" cy="100" r="4" fill="#fff"/>
+            <circle cx="450" cy="30" r="4" fill="#fff"/>
+            
+            <text x="50" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Jan</text>
+            <text x="130" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Feb</text>
+            <text x="210" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Mar</text>
+            <text x="290" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Apr</text>
+            <text x="370" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">May</text>
+            <text x="450" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Jun</text>
+            
+            <text x="35" y="143" fill="var(--text-muted)" font-size="8" text-anchor="end">2K</text>
+            <text x="35" y="93" fill="var(--text-muted)" font-size="8" text-anchor="end">5K</text>
+            <text x="35" y="33" fill="var(--text-muted)" font-size="8" text-anchor="end">10K EGP</text>
+        </svg>
+    `;
+}
+
+// --- Security Center Logging ---
+const securityLogs = [
+    { type: "access", date: "2026-06-30 21:00", device: "Chrome 142/Windows", ip: "197.34.82.10", msg: "Login Success" },
+    { type: "alert", date: "2026-06-30 21:12", device: "Safari/iOS", ip: "41.90.231.55", msg: "Invalid Coupon attempt" }
+];
+
+function addSecurityLog(action, status, detail) {
+    const today = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const log = {
+        type: status === "Alert" ? "alert" : "access",
+        date: today,
+        device: navigator.userAgent.substring(0, 20) || "Unknown Device",
+        ip: "127.0.0.1",
+        msg: `\${action} - \${detail}`
+    };
+    securityLogs.unshift(log);
+    renderSecurityLogs();
+}
+
+function renderSecurityLogs() {
+    const container = document.getElementById("admin-security-logs");
+    if (!container) return;
+    container.innerHTML = "";
+    securityLogs.slice(0, 5).forEach(log => {
+        const div = document.createElement("div");
+        div.className = "log-item";
+        div.innerHTML = `
+            <span>📅 \${log.date} | 💻 \${log.device}</span>
+            <span class="log-status \${log.type === 'alert' ? 'alert' : ''}">\${log.msg}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// --- Background Canvas Particles System ---
+let particlesArray = [];
+function initParticlesBg() {
+    const canvas = document.getElementById("particles-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 1;
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.speedY = Math.random() * 0.4 - 0.2;
+            this.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-color') || '#00f2fe';
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            
+            if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    particlesArray = [];
+    const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 25000));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+    
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particlesArray.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
+
+window.addEventListener("resize", () => {
+    const canvas = document.getElementById("particles-canvas");
+    if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+});
+
+// Run particles logic on start
+initParticlesBg();
 </script>
     <!-- Vercel Web Analytics -->
     <script defer src="/_vercel/insights/script.js"></script>

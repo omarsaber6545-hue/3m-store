@@ -713,7 +713,7 @@ function getFormattedPrice(basePriceUSD, currency = currentCurrency, lang = curr
     const converted = Math.round(basePriceUSD * config.rate * 100) / 100;
     
     if (currency === "USD") {
-        return lang === "ar" ? `${converted} دولار أمريكي` : `$${converted}`;
+        return lang === "ar" ? `${converted} دولار أمريكي` : `${converted}`;
     } else if (currency === "EUR") {
         return lang === "ar" ? `${converted} يورو` : `€${converted}`;
     } else { // EGP default
@@ -1016,8 +1016,6 @@ function renderServices(servicesList) {
     document.querySelectorAll(".btn-buy-now").forEach(btn => {
         btn.onclick = () => {
             const prodId = btn.getAttribute("data-product-id");
-            const srv = (adminMode ? draftState[currentLang] : liveState[currentLang]).services.find(x => x.id === prodId);
-            if (srv) trackProductView(srv.name);
             openPurchaseModal(prodId);
         };
     });
@@ -2930,32 +2928,6 @@ function wireEvents() {
         document.getElementById("admin-logs-modal").classList.remove("active");
     };
 
-    // Analytics button
-    const tbAnalytics = document.getElementById("tb-toggle-analytics");
-    if (tbAnalytics) {
-        tbAnalytics.onclick = () => {
-            const modal = document.getElementById("admin-analytics-modal");
-            if (modal) {
-                modal.classList.add("active");
-                renderAnalyticsDashboard();
-                addAuditLog("Analytics dashboard accessed.");
-            }
-        };
-    }
-    document.getElementById("admin-analytics-close").onclick = () => {
-        document.getElementById("admin-analytics-modal").classList.remove("active");
-    };
-    // Analytics tab switching
-    document.querySelectorAll("#admin-analytics-modal .m-tab-btn").forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll("#admin-analytics-modal .m-tab-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            document.querySelectorAll("#admin-analytics-modal .m-tab-pane").forEach(p => p.classList.remove("active"));
-            const pane = document.getElementById(btn.getAttribute("data-mtab"));
-            if (pane) pane.classList.add("active");
-        };
-    });
-
     if (tbDiscard) {
         tbDiscard.onclick = () => {
             if (confirm("هل تود بالتأكيد التراجع عن كافة التغييرات الحالية واستعادة النسخة المنشورة؟")) {
@@ -3416,7 +3388,6 @@ function wireEvents() {
     }
 
     // Reset coupon on modal close (purchase modal)
-    purchaseModal = document.getElementById("purchase-modal");
     if (purchaseModal) {
         purchaseModal.addEventListener("click", (e) => {
             if (e.target === purchaseModal) {
@@ -3741,8 +3712,6 @@ function runPreloader() {
     if (!preloader) {
         initStates();
         wireEvents();
-        trackVisitor();
-        trackActivity("visit", "زائر جديد دخل الموقع");
         return;
     }
     
@@ -3756,8 +3725,6 @@ function runPreloader() {
             // Trigger initialization
             initStates();
             wireEvents();
-            trackVisitor();
-            trackActivity("visit", "زائر جديد دخل الموقع");
             setupCustomCursor();
             setupLiveChatBot();
             setupBackToTop();
@@ -4315,7 +4282,7 @@ function validateCoupon(code, total, userId) {
     }
 
     if (total < coupon.minPurchase) {
-        return { valid: false, discount: 0, message: `الحد الأدنى للشراء هو $${coupon.minPurchase}` };
+        return { valid: false, discount: 0, message: `الحد الأدنى للشراء هو ${coupon.minPurchase}` };
     }
 
     let discount = 0;
@@ -4355,7 +4322,7 @@ function renderFeaturedCoupons() {
         const now = new Date();
         const expiry = new Date(c.expiryDate);
         const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-        const typeLabel = c.type === "percentage" ? `${c.value}%` : `$${c.value}`;
+        const typeLabel = c.type === "percentage" ? `${c.value}%` : `${c.value}`;
         const desc = currentLang === "ar" ? c.desc_ar : c.desc_en;
         const card = document.createElement("div");
         card.className = "featured-coupon-card";
@@ -4400,7 +4367,7 @@ function renderCouponsPage(filter = "") {
         const now = new Date();
         const expiry = new Date(c.expiryDate);
         const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-        const typeLabel = c.type === "percentage" ? `${c.value}%` : `$${c.value}`;
+        const typeLabel = c.type === "percentage" ? `${c.value}%` : `${c.value}`;
         const desc = currentLang === "ar" ? c.desc_ar : c.desc_en;
         const isExpired = now > expiry;
         const tags = [];
@@ -4451,7 +4418,7 @@ function renderCouponsManagerTable() {
         const expiry = new Date(c.expiryDate);
         const isExpired = now > expiry;
         const usageText = c.maxUses > 0 ? `${c.currentUses}/${c.maxUses}` : `${c.currentUses}/∞`;
-        const typeLabel = c.type === "percentage" ? `${c.value}%` : `$${c.value}`;
+        const typeLabel = c.type === "percentage" ? `${c.value}%` : `${c.value}`;
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><strong style="font-family:monospace; letter-spacing:1px;">${c.code}</strong></td>
@@ -4551,298 +4518,6 @@ function updateCouponStats() {
     }
 }
 
-// --- Analytics Engine ---
-function initAnalytics() {
-    if (!localStorage.getItem("3m_analytics_visitors")) {
-        localStorage.setItem("3m_analytics_visitors", JSON.stringify({ total: 0, daily: {} }));
-    }
-    if (!localStorage.getItem("3m_analytics_views")) {
-        localStorage.setItem("3m_analytics_views", JSON.stringify({}));
-    }
-    if (!localStorage.getItem("3m_analytics_activity")) {
-        localStorage.setItem("3m_analytics_activity", JSON.stringify([]));
-    }
-}
-
-function trackVisitor() {
-    initAnalytics();
-    const data = JSON.parse(localStorage.getItem("3m_analytics_visitors"));
-    data.total = (data.total || 0) + 1;
-    const today = new Date().toISOString().split("T")[0];
-    if (!data.daily[today]) data.daily[today] = 0;
-    data.daily[today]++;
-    localStorage.setItem("3m_analytics_visitors", JSON.stringify(data));
-}
-
-function trackProductView(serviceName) {
-    initAnalytics();
-    const views = JSON.parse(localStorage.getItem("3m_analytics_views"));
-    if (!views[serviceName]) views[serviceName] = 0;
-    views[serviceName]++;
-    localStorage.setItem("3m_analytics_views", JSON.stringify(views));
-}
-
-function trackActivity(action, details) {
-    initAnalytics();
-    const activities = JSON.parse(localStorage.getItem("3m_analytics_activity"));
-    activities.unshift({
-        action: action,
-        details: details,
-        time: new Date().toISOString()
-    });
-    if (activities.length > 200) activities.length = 200;
-    localStorage.setItem("3m_analytics_activity", JSON.stringify(activities));
-}
-
-function getAnalyticsVisitors() {
-    const data = JSON.parse(localStorage.getItem("3m_analytics_visitors")) || { total: 0, daily: {} };
-    const today = new Date().toISOString().split("T")[0];
-    const todayVisitors = data.daily[today] || 0;
-    const now = new Date();
-    const weekStart = new Date(now); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    let weekVisitors = 0, monthVisitors = 0;
-    for (const [day, count] of Object.entries(data.daily)) {
-        const d = new Date(day + "T00:00:00");
-        if (!isNaN(d.getTime())) {
-            if (d >= weekStart) weekVisitors += count;
-            if (d >= monthStart) monthVisitors += count;
-        }
-    }
-    return { total: data.total || 0, today: todayVisitors, week: weekVisitors, month: monthVisitors, daily: data.daily };
-}
-
-function getAnalyticsViews() {
-    return JSON.parse(localStorage.getItem("3m_analytics_views")) || {};
-}
-
-function getAnalyticsOrders() {
-    try { return JSON.parse(localStorage.getItem("3m_studio_orders")) || []; }
-    catch(e) { return []; }
-}
-
-function getAnalyticsActivity() {
-    return JSON.parse(localStorage.getItem("3m_analytics_activity")) || [];
-}
-
-function renderAnalyticsDashboard() {
-    renderVisitorsTab();
-    renderViewsTab();
-    renderSalesTab();
-    renderActivityTab();
-    renderRevenueTab();
-    renderPopularTab();
-}
-
-function renderVisitorsTab() {
-    const v = getAnalyticsVisitors();
-    document.getElementById("analytics-total-visitors").innerText = v.total;
-    document.getElementById("analytics-today-visitors").innerText = v.today;
-    document.getElementById("analytics-week-visitors").innerText = v.week;
-    document.getElementById("analytics-month-visitors").innerText = v.month;
-    const chart = document.getElementById("analytics-visitors-chart");
-    chart.innerHTML = "";
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        const key = d.toISOString().split("T")[0];
-        days.push({ label: key.slice(5), count: v.daily[key] || 0 });
-    }
-    const maxCount = Math.max(1, ...days.map(d => d.count));
-    days.forEach(day => {
-        const item = document.createElement("div");
-        item.className = "bar-chart-item";
-        const bar = document.createElement("div");
-        bar.className = "bar-chart-bar";
-        bar.style.height = Math.max(4, (day.count / maxCount) * 120) + "px";
-        const label = document.createElement("span");
-        label.className = "bar-chart-label";
-        label.innerText = day.label;
-        const val = document.createElement("span");
-        val.className = "bar-chart-value";
-        val.innerText = day.count;
-        item.appendChild(bar);
-        item.appendChild(label);
-        item.appendChild(val);
-        chart.appendChild(item);
-    });
-}
-
-function renderViewsTab() {
-    const views = getAnalyticsViews();
-    const names = Object.keys(views);
-    names.sort((a, b) => views[b] - views[a]);
-    const totalViews = names.reduce((s, n) => s + views[n], 0) || 1;
-    const tbody = document.getElementById("analytics-views-list");
-    tbody.innerHTML = "";
-    names.forEach(name => {
-        const count = views[name];
-        const pct = ((count / totalViews) * 100).toFixed(1);
-        const section = name.includes(" - ") ? name.split(" - ")[0] : name;
-        tbody.innerHTML += `<tr><td>${name}</td><td>${section}</td><td>${count}</td><td>${pct}%</td></tr>`;
-    });
-    if (!names.length) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">لا توجد مشاهدات مسجلة بعد</td></tr>';
-}
-
-function renderSalesTab() {
-    const orders = getAnalyticsOrders();
-    const total = orders.length;
-    const paid = orders.filter(o => o.paid || o.status === "paid" || o.status === "completed").length;
-    const failed = orders.filter(o => o.status === "failed" || o.status === "cancelled").length;
-    const pending = total - paid - failed;
-    document.getElementById("analytics-total-orders").innerText = total;
-    document.getElementById("analytics-paid-orders").innerText = paid;
-    document.getElementById("analytics-failed-orders").innerText = failed;
-    document.getElementById("analytics-pending-orders").innerText = Math.max(0, pending);
-    const chart = document.getElementById("analytics-payment-chart");
-    const methods = {};
-    orders.forEach(o => {
-        const m = o.paymentMethod || o.method || "Unknown";
-        methods[m] = (methods[m] || 0) + 1;
-    });
-    chart.innerHTML = "";
-    const maxMethod = Math.max(1, ...Object.values(methods));
-    Object.entries(methods).forEach(([method, count]) => {
-        const item = document.createElement("div");
-        item.className = "bar-chart-item";
-        const bar = document.createElement("div");
-        bar.className = "bar-chart-bar";
-        bar.style.height = Math.max(4, (count / maxMethod) * 120) + "px";
-        const label = document.createElement("span");
-        label.className = "bar-chart-label";
-        label.innerText = method;
-        const val = document.createElement("span");
-        val.className = "bar-chart-value";
-        val.innerText = count;
-        item.appendChild(bar);
-        item.appendChild(label);
-        item.appendChild(val);
-        chart.appendChild(item);
-    });
-}
-
-function renderActivityTab() {
-    const activities = getAnalyticsActivity();
-    const list = document.getElementById("analytics-activity-list");
-    list.innerHTML = "";
-    if (!activities.length) {
-        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">لا يوجد نشاط مسجل بعد</div>';
-        return;
-    }
-    activities.forEach(a => {
-        const div = document.createElement("div");
-        div.className = "activity-item";
-        const dot = document.createElement("span");
-        dot.className = "activity-dot " + (a.action || "view");
-        const text = document.createElement("span");
-        text.className = "activity-text";
-        text.innerText = a.details || a.action;
-        const time = document.createElement("span");
-        time.className = "activity-time";
-        const d = new Date(a.time);
-        time.innerText = d.toLocaleString("ar-SA");
-        div.appendChild(dot);
-        div.appendChild(text);
-        div.appendChild(time);
-        list.appendChild(div);
-    });
-}
-
-function computeRevenue() {
-    const orders = getAnalyticsOrders();
-    let totalRevenue = 0;
-    let monthRevenue = 0;
-    let orderCount = 0;
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthlyRevenue = {};
-    orders.forEach(o => {
-        if (o.paid || o.status === "paid" || o.status === "completed") {
-            const price = parseFloat(o.total) || parseFloat(o.price) || 0;
-            totalRevenue += price;
-            orderCount++;
-            const d = o.createdAt ? new Date(o.createdAt) : null;
-            if (d && d >= monthStart) monthRevenue += price;
-            if (d) {
-                const monthKey = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-                monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + price;
-            }
-        }
-    });
-    const avgOrder = orderCount > 0 ? (totalRevenue / orderCount) : 0;
-    const visitors = getAnalyticsVisitors();
-    const conversionRate = visitors.total > 0 ? ((orderCount / visitors.total) * 100) : 0;
-    return { totalRevenue, monthRevenue, avgOrder, conversionRate: conversionRate.toFixed(1), monthlyRevenue, orderCount };
-}
-
-function renderRevenueTab() {
-    const rev = computeRevenue();
-    document.getElementById("analytics-total-revenue").innerText = "$" + rev.totalRevenue.toFixed(2);
-    document.getElementById("analytics-month-revenue").innerText = "$" + rev.monthRevenue.toFixed(2);
-    document.getElementById("analytics-avg-order").innerText = "$" + rev.avgOrder.toFixed(2);
-    document.getElementById("analytics-conversion-rate").innerText = rev.conversionRate + "%";
-    const chart = document.getElementById("analytics-revenue-chart");
-    chart.innerHTML = "";
-    const months = Object.keys(rev.monthlyRevenue).sort().slice(-12);
-    const maxRev = Math.max(1, ...months.map(m => rev.monthlyRevenue[m]));
-    months.forEach(month => {
-        const amount = rev.monthlyRevenue[month];
-        const item = document.createElement("div");
-        item.className = "bar-chart-item";
-        const bar = document.createElement("div");
-        bar.className = "bar-chart-bar";
-        bar.style.height = Math.max(4, (amount / maxRev) * 120) + "px";
-        const label = document.createElement("span");
-        label.className = "bar-chart-label";
-        label.innerText = month.slice(5);
-        const val = document.createElement("span");
-        val.className = "bar-chart-value";
-        val.innerText = "$" + amount.toFixed(0);
-        item.appendChild(bar);
-        item.appendChild(label);
-        item.appendChild(val);
-        chart.appendChild(item);
-    });
-}
-
-function renderPopularTab() {
-    const orders = getAnalyticsOrders();
-    const serviceCounts = {};
-    let totalServiceOrders = 0;
-    orders.forEach(o => {
-        if (o.paid || o.status === "paid" || o.status === "completed") {
-            const items = o.items || (o.service ? [o.service] : []);
-            (Array.isArray(items) ? items : [items]).forEach(item => {
-                const name = typeof item === "string" ? item : (item.name || item.service || "Unknown");
-                const price = typeof item === "object" ? (parseFloat(item.price) || 0) : 0;
-                if (!serviceCounts[name]) serviceCounts[name] = { count: 0, revenue: 0 };
-                serviceCounts[name].count++;
-                serviceCounts[name].revenue += price;
-                totalServiceOrders++;
-            });
-        }
-    });
-    const sorted = Object.entries(serviceCounts).sort((a, b) => b[1].count - a[1].count);
-    const tbody = document.getElementById("analytics-popular-list");
-    tbody.innerHTML = "";
-    if (!sorted.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">لا توجد طلبات مكتملة بعد</td></tr>';
-        return;
-    }
-    sorted.forEach(([name, data], i) => {
-        const pct = totalServiceOrders > 0 ? ((data.count / totalServiceOrders) * 100).toFixed(1) : "0.0";
-        tbody.innerHTML += `<tr><td>${i + 1}</td><td>${name}</td><td>${data.count}</td><td>$${data.revenue.toFixed(2)}</td><td>${pct}%</td></tr>`;
-    });
-}
-
-// Clear activity
-document.addEventListener("click", function(e) {
-    if (e.target && e.target.id === "btn-clear-activity") {
-        localStorage.setItem("3m_analytics_activity", JSON.stringify([]));
-        renderActivityTab();
-    }
-});
-
 // --- Startup Launcher ---
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", runPreloader);
@@ -4887,3 +4562,551 @@ window.addEventListener('unhandledrejection', function(event) {
         { name: "تفاصيل الخطأ (Stack)", value: stack.substring(0, 1000), inline: false }
     ]);
 });
+
+// ==========================================================================
+// ULTRA PREMIUM CORE INTEGRATION LOGIC
+// ==========================================================================
+
+// --- SPA Portal View Router ---
+const btnPortalToggle = document.getElementById("btn-portal-toggle");
+const btnExitPortal = document.getElementById("btn-exit-portal");
+const sectionsContainer = document.getElementById("sections-container");
+const mainHeader = document.getElementById("main-header");
+const marketplacePortal = document.getElementById("marketplace-portal");
+const sidebarLinks = document.querySelectorAll(".sidebar-link");
+const portalViews = document.querySelectorAll(".portal-view");
+
+if (btnPortalToggle && marketplacePortal) {
+    btnPortalToggle.onclick = () => {
+        // Log entry to security center
+        addSecurityLog("Portal Access", "Authorized", "Browser Session opened workspace");
+        
+        // Hide Homepage, Show Portal
+        if (sectionsContainer) sectionsContainer.style.display = "none";
+        if (mainHeader) mainHeader.style.display = "none";
+        marketplacePortal.style.display = "flex";
+        
+        // Auto load dynamic portal sections
+        initPortalServices();
+        initAchievements();
+        renderPortalBlog();
+        renderSvgChart();
+        initParticlesBg();
+    };
+}
+
+if (btnExitPortal && marketplacePortal) {
+    btnExitPortal.onclick = () => {
+        if (sectionsContainer) sectionsContainer.style.display = "block";
+        if (mainHeader) mainHeader.style.display = "block";
+        marketplacePortal.style.display = "none";
+    };
+}
+
+// Sidebar links toggle
+sidebarLinks.forEach(link => {
+    link.onclick = (e) => {
+        e.preventDefault();
+        const viewName = link.getAttribute("data-view");
+        
+        sidebarLinks.forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+        
+        portalViews.forEach(view => {
+            if (view.id === `view-${viewName}`) {
+                view.classList.add("active");
+            } else {
+                view.classList.remove("active");
+            }
+        });
+    };
+});
+
+// Show admin link in sidebar if adminMode is active
+setInterval(() => {
+    const adminLink = document.getElementById("sidebar-admin-link");
+    if (adminLink) {
+        adminLink.style.display = adminMode ? "flex" : "none";
+    }
+}, 1000);
+
+// --- Live Fluctuating Counter Stats (Roblox & Discord) ---
+let rbxActive = 1402;
+let dcOnline = 5;
+
+setInterval(() => {
+    rbxActive += Math.floor(Math.random() * 21) - 10;
+    const rbxEl = document.getElementById("rbx-active-players");
+    if (rbxEl) rbxEl.innerText = rbxActive.toLocaleString();
+    
+    dcOnline += Math.floor(Math.random() * 3) - 1;
+    if (dcOnline < 2) dcOnline = 2;
+    const dcStaffEl = document.getElementById("dc-online-staff");
+    if (dcStaffEl) dcStaffEl.innerText = dcOnline;
+}, 5000);
+
+// --- Live Activity Feed Simulator ---
+const simulatedActivities = [
+    { icon: "🛒", ar: "طلب شراء جديد لخدمة ديسكورد بوت من مصر!", en: "New Discord Bot order placed from Egypt!" },
+    { icon: "🏆", ar: "تم ترقية عميل إلى رتبة VIP Gold!", en: "A customer was promoted to VIP Gold rank!" },
+    { icon: "🎁", ar: "عميل فتح صندوق الحظ وربح 100 XP!", en: "A customer opened the Mystery Box and won 100 XP!" },
+    { icon: "🚀", ar: "تم تسليم مشروع خريطة روبلوكس لعميل في السعودية!", en: "Roblox map project delivered to a client in Saudi Arabia!" },
+    { icon: "⭐", ar: "تقييم جديد بـ 5 نجوم لخدمة تطوير الويب!", en: "New 5-star review left for Web Development service!" }
+];
+
+const feedContainer = document.getElementById("live-activity-feed");
+function addActivityFeedItem(item) {
+    if (!feedContainer) return;
+    const div = document.createElement("div");
+    div.className = "feed-item";
+    const text = currentLang === "ar" ? item.ar : item.en;
+    div.innerHTML = `
+        <span class="feed-icon">${item.icon}</span>
+        <div class="feed-details">
+            <span>${text}</span>
+            <span class="feed-time">الآن / Just Now</span>
+        </div>
+    `;
+    feedContainer.prepend(div);
+    
+    // Cap items at 8
+    if (feedContainer.children.length > 8) {
+        feedContainer.removeChild(feedContainer.lastChild);
+    }
+}
+
+// Load initial items
+simulatedActivities.forEach(act => addActivityFeedItem(act));
+// Push new items occasionally
+setInterval(() => {
+    const randomAct = simulatedActivities[Math.floor(Math.random() * simulatedActivities.length)];
+    addActivityFeedItem(randomAct);
+    showToast(currentLang === "ar" ? randomAct.ar : randomAct.en, "info");
+}, 15000);
+
+// --- User Profile, XP Engine & Mystery Box ---
+let userXP = parseInt(localStorage.getItem("3m_user_xp")) || 240;
+let userLevel = parseInt(localStorage.getItem("3m_user_level")) || 3;
+let lastMysteryBoxOpen = localStorage.getItem("3m_mystery_box_last") || "";
+
+function initAchievements() {
+    const xpDisplay = document.getElementById("user-xp-display");
+    const lvlDisplay = document.getElementById("user-level-display");
+    const xpBar = document.getElementById("user-xp-bar");
+    const rankDisplay = document.getElementById("portal-user-rank");
+    
+    if (xpDisplay) xpDisplay.innerText = `XP: ${userXP} / ${userLevel * 200}`;
+    if (lvlDisplay) lvlDisplay.innerText = `${currentLang === "ar" ? "المستوى" : "Level"}: ${userLevel}`;
+    if (xpBar) xpBar.style.width = `${(userXP / (userLevel * 200)) * 100}%`;
+    
+    if (rankDisplay) {
+        if (userLevel >= 10) {
+            rankDisplay.innerText = currentLang === "ar" ? "أسطوري / VIP Diamond" : "VIP Diamond";
+            rankDisplay.style.borderColor = "#9d4edd";
+        } else if (userLevel >= 6) {
+            rankDisplay.innerText = currentLang === "ar" ? "محترف / VIP Gold" : "VIP Gold";
+            rankDisplay.style.borderColor = "#ffae19";
+        } else {
+            rankDisplay.innerText = currentLang === "ar" ? "مبتدئ / Bronze" : "Bronze";
+            rankDisplay.style.borderColor = "#00f2fe";
+        }
+    }
+    
+    renderAchievementsList();
+}
+
+const achievementsList = [
+    { id: "ach-1", icon: "🎟️", ar: "كود الخصم الأول", en: "First Coupon Used", desc_ar: "قم بتطبيق كود خصم في صفحة الدفع.", desc_en: "Apply any coupon at checkout.", unlocked: false },
+    { id: "ach-2", icon: "🎁", ar: "محب الحظ", en: "Box Opener", desc_ar: "افتح صندوق الحظ اليومي لأول مرة.", desc_en: "Open the daily mystery box for the first time.", unlocked: false },
+    { id: "ach-3", icon: "🎮", ar: "مطور روبلوكس", en: "Roblox Fanatic", desc_ar: "تصفح خدمات روبلوكس في المتجر.", desc_en: "Browse Roblox services in the store.", unlocked: true },
+    { id: "ach-4", icon: "🛡️", ar: "أمان الحساب", en: "Secure Access", desc_ar: "قم بزيارة مركز الحماية والأمان.", desc_en: "Visit the account security center.", unlocked: true }
+];
+
+function renderAchievementsList() {
+    const container = document.getElementById("achievements-grid");
+    if (!container) return;
+    container.innerHTML = "";
+    achievementsList.forEach(ach => {
+        const isUnlocked = ach.unlocked || (ach.id === "ach-2" && lastMysteryBoxOpen !== "");
+        const card = document.createElement("div");
+        card.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
+        card.innerHTML = `
+            <span class="achievement-icon">${ach.icon}</span>
+            <div class="achievement-details">
+                <h4>${currentLang === "ar" ? ach.ar : ach.en}</h4>
+                <p>${currentLang === "ar" ? ach.desc_ar : ach.desc_en}</p>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Mystery Box opening mechanism
+const box3d = document.getElementById("mystery-box-3d");
+const btnOpenBox = document.getElementById("btn-open-mystery-box");
+
+if (box3d && btnOpenBox) {
+    btnOpenBox.onclick = openMysteryBox;
+    box3d.onclick = openMysteryBox;
+}
+
+function openMysteryBox() {
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (lastMysteryBoxOpen === todayStr) {
+        showToast(currentLang === "ar" ? "لقد قمت بفتح صندوق الحظ اليوم بالفعل. عد غداً!" : "You have already opened the box today. Come back tomorrow!", "warning");
+        return;
+    }
+    
+    // Trigger animation
+    box3d.classList.add("shake");
+    btnOpenBox.disabled = true;
+    
+    setTimeout(() => {
+        box3d.classList.remove("shake");
+        box3d.classList.add("open");
+        
+        // Generate Reward
+        const rewards = [
+            { xp: 120, label: "120 XP" },
+            { xp: 250, label: "250 XP" },
+            { coupon: "SUMMER20", label: "كوبون خصم 20%" },
+            { xp: 50, label: "50 XP" }
+        ];
+        const win = rewards[Math.floor(Math.random() * rewards.length)];
+        
+        setTimeout(() => {
+            if (win.xp) {
+                userXP += win.xp;
+                const maxXp = userLevel * 200;
+                if (userXP >= maxXp) {
+                    userXP -= maxXp;
+                    userLevel += 1;
+                    showToast(currentLang === "ar" ? "🎉 تهانينا! تمت ترقيتك لمستوى جديد!" : "🎉 Congratulations! Level Up!", "success");
+                }
+                localStorage.setItem("3m_user_xp", userXP);
+                localStorage.setItem("3m_user_level", userLevel);
+                showToast(currentLang === "ar" ? `🎁 ربحت ${win.label}!` : `🎁 You won ${win.label}!`, "success");
+            } else if (win.coupon) {
+                showToast(currentLang === "ar" ? `🎁 ربحت كود الخصم ${win.coupon}!` : `🎁 You won coupon code ${win.coupon}!`, "success");
+            }
+            
+            lastMysteryBoxOpen = todayStr;
+            localStorage.setItem("3m_mystery_box_last", lastMysteryBoxOpen);
+            
+            initAchievements();
+            
+            setTimeout(() => {
+                box3d.classList.remove("open");
+                btnOpenBox.disabled = false;
+            }, 2000);
+            
+        }, 600);
+        
+    }, 1200);
+}
+
+// --- Theme Customizer Loader & Saved State Handler ---
+const themeFontSelect = document.getElementById("theme-font-select");
+const themeGlowSlider = document.getElementById("theme-glow-slider");
+const btnSaveTheme = document.getElementById("btn-save-custom-theme");
+
+if (btnSaveTheme) {
+    btnSaveTheme.onclick = () => {
+        const font = themeFontSelect ? themeFontSelect.value : "Cairo";
+        const glow = themeGlowSlider ? themeGlowSlider.value : "10";
+        
+        localStorage.setItem("3m_custom_font", font);
+        localStorage.setItem("3m_custom_glow", glow);
+        
+        applyCustomThemeStyles(font, glow);
+        showToast(currentLang === "ar" ? "تم حفظ المظهر وتطبيقه بنجاح!" : "Theme customized successfully!", "success");
+    };
+}
+
+// Apply selected colors from color buttons
+document.querySelectorAll(".color-btn").forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll(".color-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        const color = btn.getAttribute("data-color");
+        localStorage.setItem("3m_custom_color", color);
+        document.documentElement.style.setProperty("--primary-color", color);
+    };
+});
+
+function applyCustomThemeStyles(font, glow) {
+    document.documentElement.style.setProperty("--font-family", font);
+    const shadowIntensity = parseFloat(glow) / 10.0;
+    document.documentElement.style.setProperty("--glow-intensity", shadowIntensity);
+}
+
+// On load, restore custom theme parameters
+(function loadCustomTheme() {
+    const savedColor = localStorage.getItem("3m_custom_color");
+    const savedFont = localStorage.getItem("3m_custom_font") || "Cairo";
+    const savedGlow = localStorage.getItem("3m_custom_glow") || "10";
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty("--primary-color", savedColor);
+        const activeColorBtn = document.querySelector(`.color-btn[data-color="${savedColor}"]`);
+        if (activeColorBtn) activeColorBtn.classList.add("selected");
+    }
+    
+    if (themeFontSelect) themeFontSelect.value = savedFont;
+    if (themeGlowSlider) themeGlowSlider.value = savedGlow;
+    applyCustomThemeStyles(savedFont, savedGlow);
+})();
+
+// --- Dynamic Kiosk Store catalog ---
+function initPortalServices() {
+    const grid = document.getElementById("kiosk-grid");
+    const catsContainer = document.getElementById("kiosk-cats-container");
+    if (!grid) return;
+    
+    const services = (adminMode ? draftState[currentLang] : liveState[currentLang]).services || [];
+    
+    // Render Category filters
+    if (catsContainer) {
+        catsContainer.innerHTML = "";
+        const categories = ["all", "roblox", "discord", "web", "graphic"];
+        const categoryLabels = {
+            all: currentLang === "ar" ? "الكل" : "All",
+            roblox: currentLang === "ar" ? "روبلوكس" : "Roblox",
+            discord: currentLang === "ar" ? "ديسكورد" : "Discord",
+            web: currentLang === "ar" ? "تطوير الويب" : "Web Dev",
+            graphic: currentLang === "ar" ? "تصميم جرافيك" : "Graphics"
+        };
+        
+        categories.forEach(cat => {
+            const btn = document.createElement("button");
+            btn.className = `btn btn-sm \${cat === 'all' ? 'btn-primary' : 'btn-secondary'}`;
+            btn.innerText = categoryLabels[cat] || cat;
+            btn.onclick = () => {
+                catsContainer.querySelectorAll("button").forEach(b => {
+                    b.classList.remove("btn-primary");
+                    b.classList.add("btn-secondary");
+                });
+                btn.classList.remove("btn-secondary");
+                btn.classList.add("btn-primary");
+                filterPortalServices(cat);
+            };
+            catsContainer.appendChild(btn);
+        });
+    }
+    
+    renderKioskGrid(services);
+}
+
+function renderKioskGrid(services) {
+    const grid = document.getElementById("kiosk-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    
+    services.forEach(srv => {
+        const card = document.createElement("div");
+        card.className = "portal-card service-card";
+        card.innerHTML = `
+            <div class="card-header">
+                <h3>🎮 \${srv.title}</h3>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.8rem; color:var(--text-muted); line-height:1.5; margin-bottom:15px; height:60px; overflow:hidden;">\${srv.description}</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.03); padding-top:12px;">
+                    <span style="font-weight:bold; color:var(--primary-color);">\${getFormattedPrice(srv.priceBase)}</span>
+                    <button class="btn btn-primary btn-sm btn-glow" onclick="openPurchaseModal('\${srv.id}')">شراء / Buy</button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function filterPortalServices(cat) {
+    const services = (adminMode ? draftState[currentLang] : liveState[currentLang]).services || [];
+    if (cat === "all") {
+        renderKioskGrid(services);
+    } else {
+        const filtered = services.filter(x => x.category === cat || x.id.includes(cat));
+        renderKioskGrid(filtered);
+    }
+}
+
+// Search bar inside Store Kiosk
+const kioskSearch = document.getElementById("kiosk-search");
+if (kioskSearch) {
+    kioskSearch.oninput = () => {
+        const q = kioskSearch.value.trim().toLowerCase();
+        const services = (adminMode ? draftState[currentLang] : liveState[currentLang]).services || [];
+        const filtered = services.filter(x => x.title.toLowerCase().includes(q) || x.description.toLowerCase().includes(q));
+        renderKioskGrid(filtered);
+    };
+}
+
+// --- Media & Tutorials Blog list ---
+const blogArticles = [
+    { id: "blog-1", icon: "🎮", ar: "كيف تبرمج لعبة روبلوكس احترافية من الصفر", en: "How to Script a Roblox Game from Scratch", date: "2026-06-25", desc_ar: "دليل كامل للمبتدئين لتعلم محرك Roblox Studio واستخدام لغة Luau.", desc_en: "Learn Luau programming and workspace fundamentals inside Roblox Studio." },
+    { id: "blog-2", icon: "🤖", ar: "تأمين سيرفرات ديسكورد ضد الهجمات والثغرات", en: "Securing Discord Servers from Spam Bots", date: "2026-06-22", desc_ar: "أفضل إعدادات الأمان والبوتات المخصصة للحفاظ على مجتمعك آمناً.", desc_en: "Best security settings, permissions, and bots to prevent server raids." },
+    { id: "blog-3", icon: "🌐", ar: "أسرار زيادة سرعة تحميل مواقع الويب للألعاب", en: "Speed Optimization for Gaming Portals", date: "2026-06-18", desc_ar: "نصائح تقنية لتحسين الاستجابة السريعة وتقليل أوقات تحميل الواجهة.", desc_en: "Proven tech tips to reduce bundle size and achieve fast load speeds." }
+];
+
+function renderPortalBlog() {
+    const grid = document.getElementById("portal-blog-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    blogArticles.forEach(art => {
+        const card = document.createElement("div");
+        card.className = "portal-card";
+        card.innerHTML = `
+            <div class="card-header">
+                <h3>\${art.icon} \${currentLang === "ar" ? art.ar : art.en}</h3>
+            </div>
+            <div class="card-body">
+                <p style="font-size:0.8rem; color:var(--text-muted); line-height:1.5; margin-bottom:15px;">\${currentLang === "ar" ? art.desc_ar : art.desc_en}</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--text-muted);">
+                    <span>📅 \${art.date}</span>
+                    <a href="#" class="btn btn-secondary btn-sm" onclick="event.preventDefault(); showToast('قريباً / Coming Soon', 'info');">اقرأ / Read</a>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// --- Interactive SVG Line Chart (Admin Panel) ---
+function renderSvgChart() {
+    const chartContainer = document.getElementById("admin-svg-chart");
+    if (!chartContainer) return;
+    
+    chartContainer.innerHTML = `
+        <svg viewBox="0 0 500 200" width="100%" height="100%" style="overflow:visible;">
+            <defs>
+                <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0.0"/>
+                </linearGradient>
+            </defs>
+            <line x1="50" y1="20" x2="450" y2="20" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="50" y1="70" x2="450" y2="70" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="50" y1="120" x2="450" y2="120" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+            <line x1="50" y1="170" x2="450" y2="170" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            
+            <path d="M50,170 L50,140 L130,90 L210,130 L290,60 L370,100 L450,30 L450,170 Z" fill="url(#chartGlow)"/>
+            
+            <path d="M50,140 L130,90 L210,130 L290,60 L370,100 L450,30" fill="none" stroke="var(--primary-color)" stroke-width="3" style="filter: drop-shadow(0 0 6px var(--primary-color));"/>
+            
+            <circle cx="50" cy="140" r="4" fill="#fff"/>
+            <circle cx="130" cy="90" r="4" fill="#fff"/>
+            <circle cx="210" cy="130" r="4" fill="#fff"/>
+            <circle cx="290" cy="60" r="4" fill="#fff"/>
+            <circle cx="370" cy="100" r="4" fill="#fff"/>
+            <circle cx="450" cy="30" r="4" fill="#fff"/>
+            
+            <text x="50" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Jan</text>
+            <text x="130" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Feb</text>
+            <text x="210" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Mar</text>
+            <text x="290" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Apr</text>
+            <text x="370" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">May</text>
+            <text x="450" y="190" fill="var(--text-muted)" font-size="8" text-anchor="middle">Jun</text>
+            
+            <text x="35" y="143" fill="var(--text-muted)" font-size="8" text-anchor="end">2K</text>
+            <text x="35" y="93" fill="var(--text-muted)" font-size="8" text-anchor="end">5K</text>
+            <text x="35" y="33" fill="var(--text-muted)" font-size="8" text-anchor="end">10K EGP</text>
+        </svg>
+    `;
+}
+
+// --- Security Center Logging ---
+const securityLogs = [
+    { type: "access", date: "2026-06-30 21:00", device: "Chrome 142/Windows", ip: "197.34.82.10", msg: "Login Success" },
+    { type: "alert", date: "2026-06-30 21:12", device: "Safari/iOS", ip: "41.90.231.55", msg: "Invalid Coupon attempt" }
+];
+
+function addSecurityLog(action, status, detail) {
+    const today = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const log = {
+        type: status === "Alert" ? "alert" : "access",
+        date: today,
+        device: navigator.userAgent.substring(0, 20) || "Unknown Device",
+        ip: "127.0.0.1",
+        msg: `\${action} - \${detail}`
+    };
+    securityLogs.unshift(log);
+    renderSecurityLogs();
+}
+
+function renderSecurityLogs() {
+    const container = document.getElementById("admin-security-logs");
+    if (!container) return;
+    container.innerHTML = "";
+    securityLogs.slice(0, 5).forEach(log => {
+        const div = document.createElement("div");
+        div.className = "log-item";
+        div.innerHTML = `
+            <span>📅 \${log.date} | 💻 \${log.device}</span>
+            <span class="log-status \${log.type === 'alert' ? 'alert' : ''}">\${log.msg}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// --- Background Canvas Particles System ---
+let particlesArray = [];
+function initParticlesBg() {
+    const canvas = document.getElementById("particles-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 1;
+            this.speedX = Math.random() * 0.4 - 0.2;
+            this.speedY = Math.random() * 0.4 - 0.2;
+            this.color = getComputedStyle(document.documentElement).getPropertyValue('--primary-color') || '#00f2fe';
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            
+            if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    particlesArray = [];
+    const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 25000));
+    for (let i = 0; i < count; i++) {
+        particlesArray.push(new Particle());
+    }
+    
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particlesArray.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
+
+window.addEventListener("resize", () => {
+    const canvas = document.getElementById("particles-canvas");
+    if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+});
+
+// Run particles logic on start
+initParticlesBg();
