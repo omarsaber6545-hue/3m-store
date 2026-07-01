@@ -3941,7 +3941,6 @@ function setupLiveChatBot() {
     const chatBadge = document.getElementById("chat-badge");
     const humanBtn = document.getElementById("chat-human-btn");
     const statusEl = document.getElementById("chat-status");
-    const resetBtn = document.getElementById("chat-reset-btn");
     
     if (!trigger || !windowEl || !closeBtn || !chatInput || !chatSend || !chatMessages || !humanBtn || !statusEl) return;
 
@@ -4008,22 +4007,6 @@ function setupLiveChatBot() {
         stopPolling();
     };
 
-    if (resetBtn) {
-        resetBtn.onclick = () => {
-            if (confirm(currentLang === "ar" ? "هل أنت متأكد من إنهاء تذكرة الدعم الحالية؟" : "Are you sure you want to end the current support session?")) {
-                localStorage.removeItem("support_chat_thread_id");
-                threadId = null;
-                isHistoryLoaded = false;
-                renderedMessageIds.clear();
-                if (socket) {
-                    socket.disconnect();
-                    socket = null;
-                }
-                switchToHumanMode();
-            }
-        };
-    }
-
     // Toggle human/AI mode
     humanBtn.onclick = () => {
         if (currentMode === "ai") {
@@ -4049,9 +4032,6 @@ function setupLiveChatBot() {
         // Show input area in AI mode
         const chatInputArea = document.querySelector(".chat-input-area");
         if (chatInputArea) chatInputArea.style.display = "flex";
-        
-        // Hide reset button in AI mode
-        if (resetBtn) resetBtn.style.display = "none";
         
         // Update Header UI
         statusEl.innerText = currentLang === "ar" ? "مساعد ذكي نشط" : "AI Assistant Active";
@@ -4198,8 +4178,6 @@ function setupLiveChatBot() {
                 // Update Header Status with Ticket ID & status
                 statusEl.innerText = `${currentLang === "ar" ? "تذكرة" : "Ticket"}: ${ticketId} | ${currentLang === "ar" ? "في انتظار الرد" : "Waiting for Staff"}`;
                 statusEl.style.color = "#ffae19";
-                
-                if (resetBtn) resetBtn.style.display = "flex";
 
                 chatMessages.innerHTML = "";
                 appendHumanInfoTip();
@@ -4218,6 +4196,20 @@ function setupLiveChatBot() {
                     startBtn.innerText = currentLang === "ar" ? "ابدأ محادثة جديدة" : "Start New Conversation";
                 }
             }
+        });
+
+        socket.on('ticket_closed', () => {
+            localStorage.removeItem("support_chat_thread_id");
+            threadId = null;
+            isHistoryLoaded = false;
+            renderedMessageIds.clear();
+            showToast(currentLang === "ar" ? "تم إغلاق تذكرة الدعم بواسطة الإدارة." : "The support ticket has been closed by staff.", "info");
+            
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            switchToHumanMode();
         });
     }
 
@@ -4238,12 +4230,10 @@ function setupLiveChatBot() {
 
         if (threadId) {
             if (chatInputArea) chatInputArea.style.display = "flex";
-            if (resetBtn) resetBtn.style.display = "flex";
             statusEl.innerText = `${currentLang === "ar" ? "تذكرة" : "Ticket"}: ${threadId} | ${currentLang === "ar" ? "نشطة" : "Active"}`;
             statusEl.style.color = "#2ecc71";
             socket.emit('join', { ticketId: threadId, username: chatUsername, userId: clientUserId });
         } else {
-            if (resetBtn) resetBtn.style.display = "none";
             renderEmptyHumanChat();
         }
     }

@@ -3,7 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { getDb } from './api/_lib/db.js';
-import { Client, GatewayIntentBits, ChannelType, AttachmentBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, ChannelType, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 dotenv.config();
 
@@ -40,6 +40,10 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const CATEGORY_ID = process.env.DISCORD_TICKETS_CATEGORY_ID;
 
+// In-memory fallbacks if database is offline or not configured
+const ticketCache = new Map(); // ticketId -> { discordChannelId, username, userId }
+const channelToTicketMap = new Map(); // discordChannelId -> ticketId
+
 // --- Initialize Discord Bot Client ---
 const discordClient = new Client({
     intents: [
@@ -55,11 +59,23 @@ discordClient.on('ready', () => {
 
 // Helper: Ensure a Discord channel is created for this support ticket
 async function getOrCreateTicketChannel(db, ticketId, username, userId) {
-    let ticketResult = await db.query("SELECT * FROM support_tickets WHERE id = $1", [ticketId]);
     let discordChannelId = null;
 
-    if (ticketResult.rows.length > 0) {
-        discordChannelId = ticketResult.rows[0].discord_channel_id;
+    // Check memory cache first
+    if (ticketCache.has(ticketId)) {
+        discordChannelId = ticketCache.get(ticketId).discordChannelId;
+    }
+
+    // Check DB if available
+    if (!discordChannelId && db) {
+        try {
+            const ticketResult = await db.query("SELECT * FROM support_tickets WHERE id = $1", [ticketId]);
+            if (ticketResult.rows.length > 0) {
+                discordChannelId = ticketResult.rows[0].discord_channel_id;
+            }
+        } catch (dbErr) {
+            console.error("[Database] Error reading ticket from DB:", dbErr.message);
+        }
     }
 
     if (!discordChannelId) {
@@ -76,12 +92,22 @@ async function getOrCreateTicketChannel(db, ticketId, username, userId) {
 
             discordChannelId = channel.id;
 
-            // Save to DB
-            await db.query(
-                "INSERT INTO support_tickets (id, user_id, discord_channel_id, status) VALUES ($1, $2, $3, 'open') ON CONFLICT (id) DO UPDATE SET discord_channel_id = $3",
-                [ticketId, userId || null, discordChannelId]
-            );
-            console.log(`[Database] Ticket Saved #${ticketId}`);
+            // Cache locally
+            ticketCache.set(ticketId, { discordChannelId, username, userId });
+            channelToTicketMap.set(discordChannelId, ticketId);
+
+            // Save to DB if available
+            if (db) {
+                try {
+                    await db.query(
+                        "INSERT INTO support_tickets (id, user_id, discord_channel_id, status) VALUES ($1, $2, $3, 'open') ON CONFLICT (id) DO UPDATE SET discord_channel_id = $3",
+                        [ticketId, userId || null, discordChannelId]
+                    );
+                    console.log(`[Database] Ticket Saved #${ticketId}`);
+                } catch (dbErr) {
+                    console.error("[Database] Error inserting ticket:", dbErr.message);
+                }
+            }
 
             // Fetch user profile from database to get real email, avatar, levels
             let email = "Guest / غير مسجل";
@@ -89,16 +115,20 @@ async function getOrCreateTicketChannel(db, ticketId, username, userId) {
             let joinDate = "N/A";
             let avatarUrl = null;
 
-            if (userId) {
-                const userResult = await db.query("SELECT * FROM users WHERE id = $1", [userId]);
-                if (userResult.rows.length > 0) {
-                    const user = userResult.rows[0];
-                    email = user.email || "No Email Provided";
-                    discordId = user.id;
-                    joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A";
-                    if (user.avatar) {
-                        avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+            if (userId && db) {
+                try {
+                    const userResult = await db.query("SELECT * FROM users WHERE id = $1", [userId]);
+                    if (userResult.rows.length > 0) {
+                        const user = userResult.rows[0];
+                        email = user.email || "No Email Provided";
+                        discordId = user.id;
+                        joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A";
+                        if (user.avatar) {
+                            avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                        }
                     }
+                } catch (dbErr) {
+                    console.error("[Database] Error fetching user profile:", dbErr.message);
                 }
             }
 
@@ -117,10 +147,24 @@ async function getOrCreateTicketChannel(db, ticketId, username, userId) {
                 timestamp: new Date().toISOString()
             };
 
-            await channel.send({ embeds: [embed] });
+            // Build Danger Style button to Close ticket from Discord only
+            const closeButton = new ButtonBuilder()
+                .setCustomId('close_ticket')
+                .setLabel('🔒 إغلاق التذكرة (Close Ticket)')
+                .setStyle(ButtonStyle.Danger);
+
+            const row = new ActionRowBuilder().addComponents(closeButton);
+
+            await channel.send({ embeds: [embed], components: [row] });
             console.log(`[Discord] Created Ticket #${ticketId} successfully on Discord Server.`);
         } catch (err) {
             console.error(`[Discord] Failure creating ticket channel for #${ticketId}:`, err.message);
+        }
+    } else {
+        // Guarantee memory mappings exist
+        if (!ticketCache.has(ticketId)) {
+            ticketCache.set(ticketId, { discordChannelId, username, userId });
+            channelToTicketMap.set(discordChannelId, ticketId);
         }
     }
 
@@ -214,29 +258,41 @@ discordClient.on('messageCreate', async (msg) => {
     if (msg.channel.parentId === CATEGORY_ID) {
         try {
             const db = await getDb();
-            if (!db) return;
 
-            const ticketResult = await db.query(
-                "SELECT * FROM support_tickets WHERE discord_channel_id = $1 AND status = 'open'",
-                [msg.channel.id]
-            );
+            // Look up ticketId from cache first, fallback to DB
+            let ticketId = channelToTicketMap.get(msg.channel.id);
+            if (!ticketId && db) {
+                const ticketResult = await db.query(
+                    "SELECT * FROM support_tickets WHERE discord_channel_id = $1 AND status = 'open'",
+                    [msg.channel.id]
+                );
+                if (ticketResult.rows.length > 0) {
+                    ticketId = ticketResult.rows[0].id;
+                }
+            }
 
-            if (ticketResult.rows.length === 0) return;
-            const ticket = ticketResult.rows[0];
+            if (!ticketId) return;
 
             const attachments = [];
             msg.attachments.forEach(att => {
                 attachments.push({ url: att.url, name: att.name });
             });
 
-            await db.query(
-                "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, $5, true)",
-                [ticket.id, msg.author.id, msg.member?.displayName || msg.author.username, msg.content, JSON.stringify(attachments)]
-            );
-            console.log(`[Database] Message Saved from Staff [${msg.author.username}]`);
+            // Save to DB if online
+            if (db) {
+                try {
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, $5, true)",
+                        [ticketId, msg.author.id, msg.member?.displayName || msg.author.username, msg.content, JSON.stringify(attachments)]
+                    );
+                    console.log(`[Database] Message Saved from Staff [${msg.author.username}]`);
+                } catch (dbErr) {
+                    console.error("[Database] Error inserting staff reply:", dbErr.message);
+                }
+            }
 
             // Broadcast message via Socket.IO
-            io.to(ticket.id).emit('message', {
+            io.to(ticketId).emit('message', {
                 is_staff: true,
                 author: msg.member?.displayName || msg.author.username,
                 avatar: msg.author.avatar ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png` : null,
@@ -245,9 +301,68 @@ discordClient.on('messageCreate', async (msg) => {
                 timestamp: new Date().toISOString()
             });
 
-            console.log(`[Discord] Message Sent Successfully (Staff reply bridged to room [${ticket.id}])`);
+            console.log(`[Discord] Message Sent Successfully (Staff reply bridged to room [${ticketId}])`);
         } catch (err) {
             console.error("[Discord] Failure bridging staff reply:", err.message);
+        }
+    }
+});
+
+// Listener: Discord button interaction to Close Tickets from Discord
+discordClient.on('interactionCreate', async (interaction) => {
+    if (!interaction.isButton()) return;
+
+    if (interaction.customId === 'close_ticket') {
+        const channelId = interaction.channelId;
+        console.log(`[Discord] Close ticket button clicked in channel #${interaction.channel.name}`);
+        
+        try {
+            const db = await getDb();
+            let ticketId = channelToTicketMap.get(channelId);
+            
+            if (!ticketId && db) {
+                const ticketResult = await db.query("SELECT * FROM support_tickets WHERE discord_channel_id = $1", [channelId]);
+                if (ticketResult.rows.length > 0) {
+                    ticketId = ticketResult.rows[0].id;
+                }
+            }
+
+            if (ticketId) {
+                // Save to DB if available
+                if (db) {
+                    try {
+                        await db.query("UPDATE support_tickets SET status = 'closed' WHERE id = $1", [ticketId]);
+                        await db.query(
+                            "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, is_staff) VALUES ($1, 'system', 'System', 'Support session ended by staff.', true)",
+                            [ticketId]
+                        );
+                    } catch (dbErr) {
+                        console.error("[Database] Error updating status:", dbErr.message);
+                    }
+                }
+
+                // Broadcast closed status to client websockets
+                io.to(ticketId).emit('ticket_closed');
+                console.log(`[Socket] Broadcasted ticket_closed event to room [${ticketId}]`);
+                
+                // Evict cache
+                ticketCache.delete(ticketId);
+                channelToTicketMap.delete(channelId);
+            }
+
+            await interaction.reply({ content: "🔒 سيتم إغلاق التذكرة وحذف القناة خلال 5 ثوانٍ...\nTicket is closing and channel will be deleted in 5 seconds..." });
+            
+            setTimeout(async () => {
+                try {
+                    await interaction.channel.delete();
+                    console.log(`[Discord] Deleted Ticket Channel for #${ticketId}`);
+                } catch (delErr) {
+                    console.error("[Discord] Error deleting ticket channel:", delErr.message);
+                }
+            }, 5000);
+
+        } catch (err) {
+            console.error("[Discord] Error handling close interaction:", err.message);
         }
     }
 });
@@ -263,7 +378,11 @@ io.on('connection', (socket) => {
 
         try {
             const db = await getDb();
-            if (!db) return;
+            if (!db) {
+                // If database is offline, just emit empty history (or let memory bridge continue)
+                socket.emit('history', []);
+                return;
+            }
 
             const historyResult = await db.query(
                 "SELECT * FROM support_messages WHERE ticket_id = $1 ORDER BY created_at ASC LIMIT 100",
@@ -281,24 +400,29 @@ io.on('connection', (socket) => {
             socket.emit('history', history);
         } catch (err) {
             console.error("[Database] Failure fetching message history:", err.message);
+            socket.emit('history', []); // send empty history as fallback
         }
     });
 
     // Event: User creates a new ticket session before typing
     socket.on('create_ticket', async ({ ticketId, username, userId }) => {
-        console.log(`[Ticket] User requested new support ticket #\${ticketId}`);
+        console.log(`[Ticket] User requested new support ticket #${ticketId}`);
         try {
             const db = await getDb();
+            await getOrCreateTicketChannel(db, ticketId, username, userId);
+            
             if (db) {
-                await getOrCreateTicketChannel(db, ticketId, username, userId);
-                
-                await db.query(
-                    "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, is_staff) VALUES ($1, 'system', 'System', 'Support session started.', true)",
-                    [ticketId]
-                );
-
-                socket.emit('ticket_created', { success: true, ticketId });
+                try {
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, is_staff) VALUES ($1, 'system', 'System', 'Support session started.', true)",
+                        [ticketId]
+                    );
+                } catch (dbErr) {
+                    console.error("[Database] Error writing system message:", dbErr.message);
+                }
             }
+
+            socket.emit('ticket_created', { success: true, ticketId });
         } catch (err) {
             console.error("[Ticket] Failed to create ticket:", err.message);
             socket.emit('ticket_created', { success: false, error: err.message });
@@ -312,16 +436,21 @@ io.on('connection', (socket) => {
 
         try {
             const db = await getDb();
-            if (!db) return;
 
-            // 1. Ensure Discord ticket channel and database entry are created
+            // 1. Ensure Discord ticket channel exists
             const discordChannelId = await getOrCreateTicketChannel(db, ticketId, username, userId);
 
-            // 2. Save user message to database
-            await db.query(
-                "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, '[]'::jsonb, false)",
-                [ticketId, userId || null, username, message]
-            );
+            // 2. Save user message to database if available
+            if (db) {
+                try {
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, '[]'::jsonb, false)",
+                        [ticketId, userId || null, username, message]
+                    );
+                } catch (dbErr) {
+                    console.error("[Database] Error writing AI input:", dbErr.message);
+                }
+            }
 
             // 3. Post user message to Discord immediately
             if (discordChannelId) {
@@ -339,11 +468,17 @@ io.on('connection', (socket) => {
             // 4. Generate AI Completion
             const reply = await generateAIResponse(message, history);
 
-            // 5. Save AI response to database
-            await db.query(
-                "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, 'ai-assistant', '3M AI', $2, '[]'::jsonb, true)",
-                [ticketId, reply]
-            );
+            // 5. Save AI response to database if available
+            if (db) {
+                try {
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, 'ai-assistant', '3M AI', $2, '[]'::jsonb, true)",
+                        [ticketId, reply]
+                    );
+                } catch (dbErr) {
+                    console.error("[Database] Error writing AI response:", dbErr.message);
+                }
+            }
 
             // 6. Post AI response to Discord channel
             if (discordChannelId) {
@@ -373,21 +508,26 @@ io.on('connection', (socket) => {
 
         try {
             const db = await getDb();
-            if (!db) return;
 
-            // 1. Ensure Discord ticket channel and database entry are created
+            // 1. Ensure Discord ticket channel exists
             const discordChannelId = await getOrCreateTicketChannel(db, ticketId, username, userId);
 
-            // 2. Save user message to database
+            // 2. Save user message to database if available
             const attachmentArray = [];
             if (attachment) {
                 attachmentArray.push({ name: attachment.name, data: attachment.data });
             }
 
-            await db.query(
-                "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, $5, false)",
-                [ticketId, userId || null, username, message || "", JSON.stringify(attachmentArray)]
-            );
+            if (db) {
+                try {
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, $5, false)",
+                        [ticketId, userId || null, username, message || "", JSON.stringify(attachmentArray)]
+                    );
+                } catch (dbErr) {
+                    console.error("[Database] Error writing human message:", dbErr.message);
+                }
+            }
 
             // 3. Post user message to Discord channel
             if (discordChannelId) {
