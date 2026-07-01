@@ -1,8 +1,57 @@
-// api/discord-chat.js
-// Secure serverless endpoint to bridge client-side live chat with Discord Threads
+import { getDb } from './_lib/db.js';
+
+async function sendDiscordMessageWithAttachment(token, channelId, content, attachment) {
+    const userAgent = "DiscordBot (https://3m-store-3.vercel.app, 1.0.0)";
+    
+    if (!attachment || !attachment.data) {
+        const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bot ${token}`,
+                "Content-Type": "application/json",
+                "User-Agent": userAgent
+            },
+            body: JSON.stringify({ content })
+        });
+        return response.ok;
+    }
+
+    try {
+        const boundary = "----WebKitFormBoundary" + Math.random().toString(36).substring(2, 15);
+        const metaJson = JSON.stringify({ content });
+        
+        const base64Data = attachment.data.split(",")[1];
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        const parts = [
+            `--${boundary}\r\nContent-Disposition: form-data; name="payload_json"\r\nContent-Type: application/json\r\n\r\n${metaJson}\r\n`,
+            `--${boundary}\r\nContent-Disposition: form-data; name="files[0]"; filename="${attachment.name}"\r\nContent-Type: application/octet-stream\r\n\r\n`,
+            buffer,
+            `\r\n--${boundary}--\r\n`
+        ];
+
+        const bodyBuffer = Buffer.concat(
+            parts.map(part => typeof part === 'string' ? Buffer.from(part) : part)
+        );
+
+        const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bot ${token}`,
+                "Content-Type": `multipart/form-data; boundary=${boundary}`,
+                "User-Agent": userAgent
+            },
+            body: bodyBuffer
+        });
+
+        return response.ok;
+    } catch (err) {
+        console.error("Error sending Discord attachment:", err.message);
+        return false;
+    }
+}
 
 export default async function handler(req, res) {
-    // Add CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -14,29 +63,53 @@ export default async function handler(req, res) {
     }
 
     const token = process.env.DISCORD_BOT_TOKEN;
-    const channelId = process.env.DISCORD_LOG_CHANNEL_ID;
+    const guildId = process.env.DISCORD_GUILD_ID;
+    const categoryId = process.env.DISCORD_TICKETS_CATEGORY_ID;
 
-    if (!token || !channelId) {
-        console.error("Missing Discord Configuration on Vercel");
-        return res.status(500).json({ error: "Server Configuration Error: Bot Token or Log Channel is not set." });
+    if (!token || !guildId || !categoryId) {
+        console.error("Missing Discord configurations on Vercel environment");
+        return res.status(500).json({ error: "Server Configuration Error: Discord Bot Token, Guild ID, or Category ID is not set." });
     }
 
     const userAgent = "DiscordBot (https://3m-store-3.vercel.app, 1.0.0)";
+    const db = await getDb();
 
-    // --- GET: Fetch messages from thread ---
+    // --- GET: Fetch support history directly from Discord ---
     if (req.method === 'GET') {
-        const { threadId } = req.query;
-        if (!threadId) {
-            return res.status(400).json({ error: "Missing threadId parameter" });
+        const { action, ticketId } = req.query;
+        if (!ticketId) {
+            return res.status(400).json({ error: "Missing ticketId parameter" });
         }
 
         try {
-            const response = await fetch(`https://discord.com/api/v10/channels/${threadId}/messages?limit=50`, {
+            let discordChannelId = null;
+            if (db) {
+                const ticketResult = await db.query("SELECT * FROM support_tickets WHERE id = $1", [ticketId]);
+                if (ticketResult.rows.length > 0) {
+                    discordChannelId = ticketResult.rows[0].discord_channel_id;
+                    if (ticketResult.rows[0].status === 'closed') {
+                        return res.status(200).json({ closed: true, messages: [] });
+                    }
+                }
+            }
+
+            if (!discordChannelId) {
+                return res.status(404).json({ error: "Ticket not found or channel not linked." });
+            }
+
+            const response = await fetch(`https://discord.com/api/v10/channels/${discordChannelId}/messages?limit=100`, {
                 headers: {
                     "Authorization": `Bot ${token}`,
                     "User-Agent": userAgent
                 }
             });
+
+            if (response.status === 404) {
+                if (db) {
+                    await db.query("UPDATE support_tickets SET status = 'closed' WHERE id = $1", [ticketId]);
+                }
+                return res.status(200).json({ closed: true, messages: [] });
+            }
 
             if (!response.ok) {
                 const errText = await response.text();
@@ -44,39 +117,69 @@ export default async function handler(req, res) {
             }
 
             const messages = await response.json();
+            const mapped = [];
 
-            // Map all messages and include an isBot flag so client can separate them
-            const mappedMessages = messages.map(msg => ({
-                id: msg.id,
-                isBot: msg.author.bot || false,
-                author: msg.author.global_name || msg.author.username,
-                avatar: msg.author.avatar ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png` : null,
-                content: msg.content,
-                timestamp: msg.timestamp
-            }));
+            for (const msg of messages) {
+                if (msg.embeds && msg.embeds.length > 0 && msg.embeds[0].title && msg.embeds[0].title.includes("تذكرة دعم جديدة")) {
+                    continue;
+                }
 
-            // Reverse to chronological order (oldest first)
-            mappedMessages.reverse();
+                let isStaff = !msg.author.bot;
+                let authorName = msg.member?.nick || msg.author.global_name || msg.author.username;
+                let content = msg.content;
+                let isAI = false;
 
-            return res.status(200).json({ messages: mappedMessages });
+                if (msg.author.bot) {
+                    if (content.startsWith("👤 **")) {
+                        const match = content.match(/^👤 \*\*([^\*]+)\*\*: (.*)$/s);
+                        if (match) {
+                            authorName = match[1];
+                            content = match[2];
+                            isStaff = false;
+                        }
+                    } else if (content.startsWith("🤖 **")) {
+                        const match = content.match(/^🤖 \*\*([^\*]+)\*\*: (.*)$/s);
+                        if (match) {
+                            authorName = match[1];
+                            content = match[2];
+                            isStaff = true;
+                            isAI = true;
+                        }
+                    } else {
+                        continue;
+                    }
+                }
+
+                mapped.push({
+                    id: msg.id,
+                    is_staff: isStaff,
+                    is_ai: isAI,
+                    author: authorName,
+                    content: content,
+                    timestamp: msg.timestamp,
+                    attachments: msg.attachments ? msg.attachments.map(att => ({ url: att.url, name: att.name })) : []
+                });
+            }
+
+            mapped.reverse();
+            return res.status(200).json({ success: true, messages: mapped });
         } catch (error) {
-            console.error("Error fetching Discord thread messages:", error);
+            console.error("Error fetching support history:", error);
             return res.status(500).json({ error: "Internal Server Error", details: error.message });
         }
     }
 
-    // --- POST: Create Thread or Send Message ---
+    // --- POST: Create Ticket or Send Message ---
     if (req.method === 'POST') {
-        const { action, username, message, threadId } = req.body;
+        const { action, ticketId, username, userId, message, attachment } = req.body;
 
         if (action === 'create') {
-            if (!username || !message) {
-                return res.status(400).json({ error: "Missing username or message for thread creation" });
+            if (!ticketId || !username) {
+                return res.status(400).json({ error: "Missing ticketId or username" });
             }
 
             try {
-                // 1. Create a Public Thread in the log channel
-                const threadResponse = await fetch(`https://discord.com/api/v10/channels/${channelId}/threads`, {
+                const channelResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
                     method: "POST",
                     headers: {
                         "Authorization": `Bot ${token}`,
@@ -84,72 +187,132 @@ export default async function handler(req, res) {
                         "User-Agent": userAgent
                     },
                     body: JSON.stringify({
-                        name: `💬 دعم - ${username}`,
-                        auto_archive_duration: 1440,
-                        type: 11 // GUILD_PUBLIC_THREAD
+                        name: `tck-${username.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15)}-${ticketId.substring(4)}`,
+                        type: 0,
+                        parent_id: categoryId
                     })
                 });
 
-                if (!threadResponse.ok) {
-                    const errText = await threadResponse.text();
-                    return res.status(threadResponse.status).json({ error: "Failed to create thread", details: errText });
+                if (!channelResponse.ok) {
+                    const errText = await channelResponse.text();
+                    return res.status(channelResponse.status).json({ error: "Failed to create channel in Discord", details: errText });
                 }
 
-                const threadData = await threadResponse.json();
-                const newThreadId = threadData.id;
+                const channelData = await channelResponse.json();
+                const newChannelId = channelData.id;
 
-                // 2. Post the first message in the thread
-                const msgResponse = await fetch(`https://discord.com/api/v10/channels/${newThreadId}/messages`, {
+                let email = "Guest / غير مسجل";
+                let discordId = "Guest / غير مسجل";
+                let joinDate = "N/A";
+                let avatarUrl = null;
+
+                if (userId && db) {
+                    try {
+                        const userResult = await db.query("SELECT * FROM users WHERE id = $1", [userId]);
+                        if (userResult.rows.length > 0) {
+                            const user = userResult.rows[0];
+                            email = user.email || "No Email Provided";
+                            discordId = user.id;
+                            joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A";
+                            if (user.avatar) {
+                                avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                            }
+                        }
+                    } catch (dbErr) {
+                        console.error("Error fetching user profile:", dbErr.message);
+                    }
+                }
+
+                const embedPayload = {
+                    embeds: [{
+                        title: `🎫 تذكرة دعم جديدة (New Support Ticket): ${ticketId}`,
+                        color: 3447003,
+                        thumbnail: avatarUrl ? { url: avatarUrl } : null,
+                        fields: [
+                            { name: "👤 اسم المستخدم (Username)", value: username, inline: true },
+                            { name: "🆔 معرف ديسكورد (Discord ID)", value: discordId, inline: true },
+                            { name: "📧 البريد الإلكتروني (Email)", value: email, inline: true },
+                            { name: "📅 تاريخ الانضمام (Join Date)", value: joinDate, inline: true },
+                            { name: "ℹ️ حالة الجلسة (Session)", value: userId ? "🔐 مسجل دخول ديسكورد (Discord Auth)" : "👤 زائر (Guest)", inline: false },
+                            { name: "✏️ الإرشادات (Instructions)", value: "الرد هنا سيصل للعميل بالوقت الفعلي. اكتب ردك مباشرة في الشات وسيظهر للعميل فوراً.\nType your response here to reply to the user instantly.", inline: false }
+                        ],
+                        timestamp: new Date().toISOString()
+                    }],
+                    components: [{
+                        type: 1,
+                        components: [{
+                            type: 2,
+                            style: 4,
+                            custom_id: "close_ticket",
+                            label: "🔒 إغلاق التذكرة (Close Ticket)"
+                        }]
+                    }]
+                };
+
+                await fetch(`https://discord.com/api/v10/channels/${newChannelId}/messages`, {
                     method: "POST",
                     headers: {
                         "Authorization": `Bot ${token}`,
                         "Content-Type": "application/json",
                         "User-Agent": userAgent
                     },
-                    body: JSON.stringify({
-                        content: `🆕 **بدأت تذكرة دعم مباشر جديدة**\n👤 **الاسم**: ${username}\n💬 **الرسالة الأولى**: ${message}\n\n*الرد داخل هذا الخيط سيصل للعميل على الموقع مباشرة.*`
-                    })
+                    body: JSON.stringify(embedPayload)
                 });
 
-                if (!msgResponse.ok) {
-                    const errText = await msgResponse.text();
-                    console.error("Failed to post initial message in thread:", errText);
+                if (db) {
+                    await db.query(
+                        "INSERT INTO support_tickets (id, user_id, discord_channel_id, status) VALUES ($1, $2, $3, 'open')",
+                        [ticketId, userId || null, newChannelId]
+                    );
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, is_staff) VALUES ($1, 'system', 'System', 'Support session started.', true)",
+                        [ticketId]
+                    );
                 }
 
-                return res.status(200).json({ threadId: newThreadId });
+                return res.status(200).json({ success: true, ticketId, discordChannelId: newChannelId });
             } catch (error) {
-                console.error("Error creating Discord thread:", error);
+                console.error("Error creating support ticket:", error);
                 return res.status(500).json({ error: "Internal Server Error", details: error.message });
             }
-        } 
-        
+        }
+
         if (action === 'send') {
-            if (!threadId || !username || !message) {
-                return res.status(400).json({ error: "Missing threadId, username, or message" });
+            if (!ticketId || !username || (!message && !attachment)) {
+                return res.status(400).json({ error: "Missing parameters" });
             }
 
             try {
-                // Post message in existing thread
-                const response = await fetch(`https://discord.com/api/v10/channels/${threadId}/messages`, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bot ${token}`,
-                        "Content-Type": "application/json",
-                        "User-Agent": userAgent
-                    },
-                    body: JSON.stringify({
-                        content: `👤 **${username}**: ${message}`
-                    })
-                });
+                let discordChannelId = null;
+                if (db) {
+                    const ticketResult = await db.query("SELECT * FROM support_tickets WHERE id = $1", [ticketId]);
+                    if (ticketResult.rows.length > 0) {
+                        discordChannelId = ticketResult.rows[0].discord_channel_id;
+                    }
+                }
 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    return res.status(response.status).json({ error: "Failed to send message to thread", details: errText });
+                if (!discordChannelId) {
+                    return res.status(404).json({ error: "Ticket channel not found." });
+                }
+
+                const displayContent = `👤 **${username}**: ${message || ""}`;
+                const success = await sendDiscordMessageWithAttachment(token, discordChannelId, displayContent, attachment);
+                
+                if (!success) {
+                    return res.status(500).json({ error: "Failed to dispatch message to Discord API" });
+                }
+
+                if (db) {
+                    const localAtts = attachment ? [{ name: attachment.name, url: "" }] : [];
+                    await db.query(
+                        "INSERT INTO support_messages (ticket_id, sender_id, sender_name, content, attachments, is_staff) VALUES ($1, $2, $3, $4, $5, false)",
+                        [ticketId, userId || null, username, message || "", JSON.stringify(localAtts)]
+                    );
                 }
 
                 return res.status(200).json({ success: true });
             } catch (error) {
-                console.error("Error sending message to Discord thread:", error);
+                console.error("Error dispatching message:", error);
                 return res.status(500).json({ error: "Internal Server Error", details: error.message });
             }
         }
